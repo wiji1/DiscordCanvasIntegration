@@ -6,6 +6,7 @@ class MyString {
 
     friend std::ostream &operator<<(std::ostream &os, const MyString &my_string);
     friend std::istream &operator>>(std::istream &is, MyString &my_string);
+    friend bool operator==(const MyString& rhs, const MyString& lhs);
 
 
 private:
@@ -19,8 +20,10 @@ public:
     void set_string(const char *str);
 
     MyString &operator=(const MyString &rhs);
+    MyString &operator=(MyString &&rhs) noexcept;
     MyString &operator-();
-
+    MyString &operator*(int multiplier);
+    MyString &operator*=(int multiplier);
 
 
     ~MyString();

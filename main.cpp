@@ -7,22 +7,37 @@ void createObjects();
 using namespace std;
 
 int main() {
-    MyString myString {"Hello!"};
-    MyString secondString {myString};
+    MyString myString {MyString{"Hello!"}};
+    myString *= 3;
 
 
-    secondString.set_string("Goodbye!");
+    cout << myString * -2 << endl;
 
-    cout << myString << " " << secondString << endl;
+    MyString *inputString {nullptr};
+    cin >> *inputString;
+
+    cout << "Input: " << inputString << endl;
 
 
-    secondString = -secondString;
-
-//    MyString thirdString {-secondString};
-
-    cout << myString << " " << secondString << " " << endl;
-
-    createObjects();
+//    MyString secondString {myString};
+//
+//
+//    secondString.set_string("Goodbye!");
+//
+//    cout << myString << " " << secondString << endl;
+//
+//
+//    secondString = -secondString;
+//    secondString = {MyString{"Hello!"}};
+//
+////    MyString thirdString {-secondString};
+//
+//
+//    cout << "Equal: " << (myString == secondString) << endl;
+//
+//    cout << "Strings: " << myString << " " << secondString << " " << endl;
+//
+//    createObjects();
 
 
 }
