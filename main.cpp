@@ -7,7 +7,7 @@ void createObjects();
 using namespace std;
 
 int main() {
-    MyString myString {"Hello!"};
+    MyString myString {"Hellso!"};
     MyString secondString {myString};
 
 
