@@ -1,5 +1,6 @@
 #include "MyString.h"
 #include <iostream>
+#include "cstring"
 
 MyString::MyString(const char *str) {
     this->str = new char[std::strlen(str) + 1];
