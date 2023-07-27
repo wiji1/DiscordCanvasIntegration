@@ -1,60 +1,74 @@
 #include <iostream>
 #include <vector>
-#include <memory>
+#include "Savings_Account.h"
+#include "Account_Util.h"
+#include "Checking_Account.h"
+#include "Trust_Account.h"
+#include "exceptions/IllegalBalanceException.h"
+#include "exceptions/InsufficientFundsException.h"
 
-
-class Test {
-private:
-    int data;
-public:
-    Test() : data{0} { std::cout << "Test Constructor" << std::endl; }
-    explicit Test(int data) : data{data} { std::cout << "Test Constructor" << std::endl; }
-
-    ~Test() { std::cout << "Test Destructor" << std::endl; }
-
-    [[nodiscard]] int get_data() const { return data; }
-};
-
-std::unique_ptr<std::vector<std::shared_ptr<Test>>> make();
-void fill(std::vector<std::shared_ptr<Test>> &vec, int num);
-void display(std::vector<std::shared_ptr<Test>> &vec);
-
+using namespace std;
 
 int main() {
-    std::unique_ptr<std::vector<std::shared_ptr<Test>>> vec_ptr;
-    vec_ptr = make();
+    cout.precision(2);
+    cout << fixed;
 
-    std::cout << "Please enter the amount of data points you would like to enter:" << std::endl;
-    int num {};
-    std::cin >> num;
-    fill(*vec_ptr, num);
-    display(*vec_ptr);
+//    try {
+//        Savings_Account save {"s", -12};
+//    } catch(IllegalBalanceException &ex) {
+//        std::cout << "Unable to create account: " << ex.what() << std::endl;
+//    }
+
+
+    vector<Account *> accounts;
+    accounts.emplace_back(new Savings_Account {"Joe", 12});
+    accounts.emplace_back(new Trust_Account {"Larry", 674, 0.012});
+    accounts.emplace_back(new Checking_Account {"Bob", 1200});
+    accounts.emplace_back(new Savings_Account {"Curly", 5000});
+
+    display(accounts);
+    deposit(accounts, 1000);
+    withdraw(accounts,2000);
+
+
+    vector<Account *> sav_accounts;
+    sav_accounts.emplace_back(new Savings_Account {"Superman"});
+    sav_accounts.emplace_back(new Checking_Account {"Batman", 2000});
+    sav_accounts.emplace_back(new Trust_Account {"Wonderwoman", 5000, 5.0});
+
+    display(sav_accounts);
+    deposit(sav_accounts, 1000);
+    withdraw(sav_accounts, 2000);
+
+
+    Checking_Account checking_account {"Bob", 1250.32};
+//    checking_account.withdraw(1250);
+
+    Trust_Account trust_account {"Joe", 500, 0.05};
+//    trust_account.withdraw(100);
+//    trust_account.withdraw(1);
+//    trust_account.withdraw(1);
+//    trust_account.withdraw(95);
+//    trust_account.deposit(5000);
+
+    cout << "=================================" << endl;
+    cout << "PRINT!: ";
+    for (const auto &item: accounts) cout << *item << " ";
+    cout << endl;
+
+    cout << checking_account.get_balance() << " " << trust_account.get_balance() << endl;
+
+    checking_account += 100;
+//    trust_account -= 500;
+
+    cout << checking_account.get_balance() << " " << trust_account.get_balance() << endl;
+
+
+    for(auto &p : accounts) delete p;
+
+    for(auto &p : sav_accounts) delete p;
+
 
     return 0;
-}
-
-std::unique_ptr<std::vector<std::shared_ptr<Test>>> make() {
-    std::unique_ptr ptr {std::make_unique<std::vector<std::shared_ptr<Test>>>()};
-
-    return ptr;
-}
-
-void fill(std::vector<std::shared_ptr<Test>> &vec, int num) {
-    for(int i{}; i < num; i++) {
-        std::cout << "What number would you like to enter?" << std::endl;
-
-        int temp_num {};
-        std::cin >> temp_num;
-
-        vec.push_back(std::make_shared<Test>(temp_num));
-    }
-}
-
-void display(std::vector<std::shared_ptr<Test>> &vec) {
-    std::cout << "==================[Data]==================" << std::endl;
-    for(const auto &ptr: vec) {
-        std::cout << "Value: " << ptr->get_data() << std::endl;
-    }
-    std::cout << "==========================================" << std::endl;
 }
 
