@@ -41,3 +41,5 @@ Account &Account::operator-=(double amount) {
 
     return *this;
 }
+
+Account::~Account() = default;

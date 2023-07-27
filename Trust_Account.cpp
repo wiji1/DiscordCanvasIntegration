@@ -45,3 +45,7 @@ Account &Trust_Account::operator-=(double amount) {
 
     return *this;
 }
+
+void Trust_Account::print(std::ostream &os) {
+    os << "Trust Account";
+}

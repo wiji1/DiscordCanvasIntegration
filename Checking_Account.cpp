@@ -15,8 +15,17 @@ bool Checking_Account::withdraw(double amount) {
     return success;
 }
 
+bool Checking_Account::deposit(double amount) {
+    return Account::deposit(amount);
+}
+
 Account &Checking_Account::operator-=(double amount) {
     withdraw(amount);
 
     return *this;
 }
+
+void Checking_Account::print(std::ostream &os) {
+    os << "Checking Account";
+}
+

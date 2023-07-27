@@ -12,13 +12,15 @@ using namespace std;
 int main() {
     cout.precision(2);
     cout << fixed;
-   
+
+    Savings_Account save {"s", 12};
+
     // Accounts
-    vector<Account> accounts;
-    accounts.emplace_back();
-    accounts.emplace_back("Larry");
-    accounts.emplace_back("Moe", 2000);
-    accounts.emplace_back("Curly", 5000);
+    vector<Account *> accounts;
+    accounts.emplace_back(new Savings_Account {"Joe", 12});
+    accounts.emplace_back(new Trust_Account {"Larry", 674, 0.012});
+    accounts.emplace_back(new Checking_Account {"Bob", 1200});
+    accounts.emplace_back(new Savings_Account {"Curly", 5000});
     
     display(accounts);
     deposit(accounts, 1000);
@@ -26,11 +28,11 @@ int main() {
     
     // Savings 
 
-    vector<Savings_Account> sav_accounts;
-    sav_accounts.emplace_back();
-    sav_accounts.emplace_back("Superman");
-    sav_accounts.emplace_back("Batman", 2000);
-    sav_accounts.emplace_back("Wonderwoman", 5000, 5.0);
+    vector<Account *> sav_accounts;
+//    sav_accounts.emplace_back();
+    sav_accounts.emplace_back(new Savings_Account {"Superman"});
+    sav_accounts.emplace_back(new Checking_Account {"Batman", 2000});
+    sav_accounts.emplace_back(new Trust_Account {"Wonderwoman", 5000, 5.0});
 
     display(sav_accounts);
     deposit(sav_accounts, 1000);
@@ -48,12 +50,21 @@ int main() {
     trust_account.deposit(5000);
 
     cout << "=================================" << endl;
+    cout << "PRINT!: ";
+    for (const auto &item: accounts) cout << *item << " ";
+    cout << endl;
+
     cout << checking_account.get_balance() << " " << trust_account.get_balance() << endl;
 
     checking_account += 100;
     trust_account -= 500;
 
     cout << checking_account.get_balance() << " " << trust_account.get_balance() << endl;
+
+
+    for(auto &p : accounts) delete p;
+
+    for(auto &p : sav_accounts) delete p;
 
 
     return 0;

@@ -13,6 +13,8 @@ public:
 
     Account &operator+=(double amount) override;
     Account &operator-=(double amount) override;
+
+    void print(std::ostream &os) override;
 };
 
 

@@ -13,6 +13,10 @@ bool Savings_Account::deposit(double amount) {
     return Account::deposit(amount);
 }
 
+bool Savings_Account::withdraw(double amount) {
+    return Account::withdraw(amount);
+}
+
 std::ostream &operator<<(std::ostream &os, const Savings_Account &account) {
     os << "[Savings_Account: " << account.name << ": " << account.balance << ", " << account.int_rate << "%]";
     return os;
@@ -23,4 +27,9 @@ Account &Savings_Account::operator+=(double amount) {
 
     return *this;
 }
+
+void Savings_Account::print(std::ostream &os) {
+    os << "Savings Account";
+}
+
 
