@@ -43,6 +43,7 @@ int main() {
     std::cout << "Scanning " << total_word_count << " words..." << std::endl;
     std::cout << "The source file has " << selected_word_count << " instances of the word \"" << word << "\"" << std::endl;
 
+    file_stream.close();
     return 0;
 }
 
