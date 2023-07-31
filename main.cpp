@@ -2,58 +2,42 @@
 #include <vector>
 #include <string>
 #include <fstream>
+#include <iomanip>
 
 int main() {
-    std::string to_lower(std::string &source);
+    bool is_empty(std::string &source);
 
-    std::fstream file_stream {"../source.txt"};
-    if(!file_stream) {
+    std::fstream input_stream {"../source.txt"};
+    if(!input_stream) {
         std::cerr << "Cannot locate file!" << std::endl;
         return 1;
     }
 
-    std::cout << "Please enter a word you would like to search for: " << std::endl;
+    std::ofstream output_stream {"../output.txt"};
 
-    std::string word;
-    std::cin >> word;
+    int line_num {1};
+    std::string current_line {};
 
-    int total_word_count {1};
-    int selected_word_count {0};
+    while(!input_stream.eof()) {
+        std::getline(input_stream, current_line);
+        if(!is_empty(current_line)) output_stream << line_num << "     ";
+        output_stream <<  current_line << std::endl;
 
-    char current_char;
-    std::string current_word;
-    bool last_char_space {false};
-
-    while(!file_stream.eof()) {
-        file_stream.get(current_char);
-
-        if(current_char == ' ' || current_char == '\n') {
-            if(last_char_space) continue;
-
-            last_char_space = true;
-            total_word_count++;
-            if(to_lower(current_word) == to_lower(word)) selected_word_count++;
-            current_word = "";
-            continue;
-        } else last_char_space = false;
-
-        current_word += current_char;
+        line_num++;
     }
 
-    std::cout << "Scanning " << total_word_count << " words..." << std::endl;
-    std::cout << "The source file has " << selected_word_count << " instances of the word \"" << word << "\"" << std::endl;
-
-    file_stream.close();
+    input_stream.close();
+    output_stream.close();
     return 0;
 }
 
-std::string to_lower(std::string &source) {
+bool is_empty(std::string &source) {
     std::string final {};
 
     for(auto c : source) {
-        final += static_cast<char>(tolower(c));
+        if(c != ' ' && c != '\n') return false;
     }
 
-    return final;
+    return true;
 }
 
