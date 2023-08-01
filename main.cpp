@@ -1,100 +1,100 @@
 #include <iostream>
+#include <fstream>
+#include <sstream>
+#include <map>
+#include <set>
 #include <string>
-#include <list>
-#include <algorithm>
-#include "Song.h"
+#include <iomanip>
 
-template<typename Base, typename T>
-inline bool instanceof(const T*) {
-    return std::is_base_of<Base, T>::value;
+void display_words(const std::map<std::string, int> &words) {
+    std::cout << std::setw(12) << std::left << "\nWord"
+              << std::setw(7) << std::right << "Count"<< std::endl;
+    std::cout << "===================" << std::endl;
+    for (const auto& pair: words)
+        std::cout << std::setw(12) << std::left << pair.first
+                  << std::setw(7) << std::right << pair.second << std::endl;
 }
 
-void add_song();
+void display_words(const std::map<std::string, std::set<int>> &words)
+{
+    std::cout << std::setw(12) << std::left << "\nWord"
+              << "Occurrences"<< std::endl;
+    std::cout << "=====================================================================" << std::endl;
+    for (const auto& pair: words) {
+        std::cout << std::setw(12) << std::left << pair.first
+                  << std::left << "[ ";
+        for (auto i: pair.second)
+            std::cout << i << " ";
+        std::cout << "]" << std::endl;
+    }
+}
 
-std::list<Song> song_list;
-std::list<Song>::iterator song_iterator;
+std::string clean_string(const std::string &s) {
+    std::string result;
+    for (char c: s) {
+        if (c == '.' || c == ',' || c == ';' || c == ':')
+            continue;
+        else
+            result += static_cast<char>(tolower(c));
+    }
+    return result;
+}
 
-int main() {
-    song_list.emplace_back("Song1", "Idiot", 4);
-    song_iterator = song_list.begin();
+void part1() {
+    std::map<std::string, int> words;
+    std::string line;
+    std::string word;
+    std::ifstream in_file {"../words.txt"};
+    if (in_file) {
 
-    char current_selection;
+       while(!in_file.eof()) {
+           std::getline(in_file, line);
 
-    do {
-        std::cout << "=============================================" << std::endl;
-        std::cout << "Enter a selection (Q to quit):" << std::endl << std::endl;
-        std::for_each(song_list.begin(), song_list.end(), [](Song &song) {
-            std::cout << song;
-        });
+           std::stringstream ss(line);
+           while(ss >> word) {
+               word = clean_string(word);
 
-        std::cout << std::endl << "Currently Playing:" << std::endl << *song_iterator;
-        std::cout << std::endl << std::endl;
+               words[word]++;
+           }
+       }
 
-        std::cout <<
-        "F - Play First Song" << std::endl <<
-        "N - Play Next Song" << std::endl <<
-        "P - Play Previous Song" << std::endl <<
-        "A - Add and Play New Song" << std::endl <<
-        "L - List Current Playlist" << std::endl;
-        std::cout << "=============================================" << std::endl;
+        in_file.close();
+        display_words(words);
+    } else {
+        std::cerr << "Error opening input file" << std::endl;
+    }
+}
 
-        std::cin >> current_selection;
+void part2() {
+    std::map<std::string, std::set<int>> words;
+    std::string line;
+    int line_number {};
+    std::string word;
+    std::ifstream in_file {"../words.txt"};
+    if (in_file) {
 
-        switch(toupper(current_selection)) {
-            case 'F':
-                song_iterator = song_list.begin();
-                break;
-            case 'N':
-                song_iterator++;
-                if (song_iterator == song_list.end()) song_iterator = song_list.begin();
-                break;
-            case 'P':
-                if (song_iterator == song_list.begin()) song_iterator = song_list.end();
-                song_iterator--;
+        while(!in_file.eof()) {
+            std::getline(in_file, line);
+            line_number++;
 
-                break;
-            case 'A':
-                add_song();
-                break;
-            case 'L':
-            case 'Q':
-                break;
-            default:
-                std::cout << "Invalid Entry: Please try again!" << std::endl;
-                break;
+            std::stringstream ss(line);
+            while(ss >> word) {
+                word = clean_string(word);
+
+                words[word].insert(line_number);
+            }
         }
 
+        in_file.close();
+        display_words(words);
+    } else {
+        std::cerr << "Error opening input file" << std::endl;
+    }
+}
 
-    } while(toupper(current_selection) != 'Q');
-
-    std::cout << "Goodbye!" << std::endl;
-
+int main() {
+    part1();
+    part2();
     return 0;
 }
-
-void add_song() {
-    std::string name;
-    std::string artist;
-    int rating;
-
-    std::cout << "Please enter a name for the song: " << std::endl;
-    std::cin >> name;
-    std::cout << "Please enter the song's artist: " << std::endl;
-    std::cin >> artist;
-
-    main:
-    do {
-        std::string temp;
-        std::cout << "Please enter a rating for the song (1-5)" << std::endl;
-        std::cin >> temp;
-
-        for(auto c : temp) if(!isdigit(c)) goto main;
-        rating = std::stoi(temp);
-
-    } while(rating < 1 || rating > 5);
-
-    song_list.emplace_back(name, artist, rating);
-    song_iterator = song_list.begin();
-}
-
 
