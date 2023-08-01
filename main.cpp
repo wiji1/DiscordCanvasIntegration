@@ -3,39 +3,31 @@
 #include <string>
 #include <fstream>
 #include <iomanip>
+#include <deque>
+
+bool is_palindrome(std::string &input);
 
 int main() {
-    bool is_empty(std::string &source);
+    std::string str {"Absa"};
+    std::cout << std::boolalpha << is_palindrome(str) << std::endl;
 
-    std::fstream input_stream {"../source.txt"};
-    if(!input_stream) {
-        std::cerr << "Cannot locate file!" << std::endl;
-        return 1;
-    }
-
-    std::ofstream output_stream {"../output.txt"};
-
-    int line_num {1};
-    std::string current_line {};
-
-    while(!input_stream.eof()) {
-        std::getline(input_stream, current_line);
-        if(!is_empty(current_line)) output_stream << line_num << "     ";
-        output_stream <<  current_line << std::endl;
-
-        line_num++;
-    }
-
-    input_stream.close();
-    output_stream.close();
     return 0;
 }
 
-bool is_empty(std::string &source) {
-    std::string final {};
+bool is_palindrome(std::string &input) {
+    std::deque<char> deque {};
+    for(auto c : input) {
+        if(!isalnum(c)) continue;
+        deque.push_front(static_cast<char>(toupper(c)));
+    }
 
-    for(auto c : source) {
-        if(c != ' ' && c != '\n') return false;
+    while(deque.size() > 1) {
+        char f {deque.front()};
+        char b {deque.back()};
+
+        if(f != b) return false;
+        deque.pop_front();
+        deque.pop_back();
     }
 
     return true;
