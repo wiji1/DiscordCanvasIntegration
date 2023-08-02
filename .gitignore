@@ -1,5 +1,5 @@
 /.idea/
 /cmake-build-debug/
 /libs/
-CMakeLists.txt
+/CMakeLists.txt
 /libs/DPP/
