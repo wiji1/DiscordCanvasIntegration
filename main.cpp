@@ -2,40 +2,48 @@
 #include <vector>
 #include <string>
 #include <fstream>
-#include <iomanip>
 #include <stack>
 #include <dpp/dpp.h>
+#include <exception>
 
-bool is_palindrome(std::string &input);
+std::string get_token();
+
+const std::string BOT_TOKEN {get_token()};
 
 int main() {
+    dpp::cluster bot(BOT_TOKEN);
+    bot.on_log(dpp::utility::cout_logger());
 
+    bot.on_slashcommand([](const dpp::slashcommand_t& event) {
+        if (event.command.get_command_name() == "ping") {
+            event.reply("Pong!");
+        }
+    });
 
-    std::string str {"Drab as a fool, aloof as a basrd."};
-    std::cout << std::boolalpha << is_palindrome(str) << std::endl;
+    bot.on_ready([&bot](const dpp::ready_t& event) {
+        if (dpp::run_once<struct register_bot_commands>()) {
+            bot.global_bulk_command_create(std::vector<dpp::slashcommand> {
+                    dpp::slashcommand("ping", "Ping pong!", bot.me.id),
+                    dpp::slashcommand("test", "A development command", bot.me.id)
+            }
+            );
+        }
+    });
+
+    bot.start(dpp::st_wait);
+
 
     return 0;
 }
 
-bool is_palindrome(std::string &input) {
-    std::stack<char> stack {};
-    std::string compare {};
+std::string get_token() {
+    std::ifstream input {std::ifstream {"./token.txt"}};
+    if(!input) throw std::exception {};
 
-    for(auto c : input) {
-        if(!isalpha(c)) continue;
-
-
-        compare += static_cast<char>(std::toupper(c));
-        stack.push(static_cast<char>(std::toupper(c)));
-    }
-
-    int index {};
-    while(!stack.empty()) {
-        if(stack.top() != compare[index]) return false;
-        stack.pop();
-        index++;
-    }
-
-    return true;
+    std::string token;
+    std::getline(input, token);
+    return token;
 }
+
+
 

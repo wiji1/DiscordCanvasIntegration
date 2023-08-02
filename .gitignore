@@ -1,5 +1,7 @@
 /.idea/
 /cmake-build-debug/
+/cmake-build-debug-event-trace/
 /libs/
 /CMakeLists.txt
 /libs/DPP/
+/token.txt
