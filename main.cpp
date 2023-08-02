@@ -37,7 +37,7 @@ int main() {
 }
 
 std::string get_token() {
-    std::ifstream input {std::ifstream {"./token.txt"}};
+    std::ifstream input {std::ifstream {"../token.txt"}};
     if(!input) throw std::exception {};
 
     std::string token;
