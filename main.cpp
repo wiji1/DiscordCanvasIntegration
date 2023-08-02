@@ -4,10 +4,13 @@
 #include <fstream>
 #include <iomanip>
 #include <stack>
+#include <dpp/dpp.h>
 
 bool is_palindrome(std::string &input);
 
 int main() {
+
+
     std::string str {"Drab as a fool, aloof as a basrd."};
     std::cout << std::boolalpha << is_palindrome(str) << std::endl;
 
@@ -20,6 +23,7 @@ bool is_palindrome(std::string &input) {
 
     for(auto c : input) {
         if(!isalpha(c)) continue;
+
 
         compare += static_cast<char>(std::toupper(c));
         stack.push(static_cast<char>(std::toupper(c)));
