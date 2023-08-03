@@ -5,6 +5,7 @@
 #include <stack>
 #include <dpp/dpp.h>
 #include <exception>
+#include <nlohmann/json.hpp>
 
 std::string get_token();
 
@@ -37,11 +38,18 @@ int main() {
 }
 
 std::string get_token() {
-    std::ifstream input {std::ifstream {"../token.txt"}};
-    if(!input) throw std::exception {};
+    std::ifstream input {"../resources/config.json"};
+    if (!input)
+        throw std::runtime_error {"Cannot locate config file"};
 
-    std::string token;
-    std::getline(input, token);
+    nlohmann::json data;
+    input >> data;
+    std::cout << data << std::endl;
+
+    if (!data.contains("bot-token")) throw std::runtime_error {"Config file does not contain bot token"};
+
+    std::string token {data["bot-token"]};
+    input.close();
     return token;
 }
 
