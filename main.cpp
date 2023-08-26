@@ -4,17 +4,19 @@
 #include <fstream>
 #include <stack>
 #include <dpp/dpp.h>
-#include "SQL/SQLManager.h"
+#include <mongocxx/client.hpp>
+#include <mongocxx/instance.hpp>
+#include "ConfigManager.h"
+#include "DatabaseManager.h"
 
 std::string get_token();
-std::string get_sql_connection();
 void make_request(dpp::cluster &bot, const std::string &token);
 
-const std::string BOT_TOKEN {get_token()};
-const SQLManager SQL_MANAGER {get_sql_connection()};
-
 int main() {
-//    dpp::cluster bot(BOT_TOKEN);
+    ConfigManager::init();
+    DatabaseManager::init();
+//
+//    dpp::cluster bot(get_token());
 //
 //    bot.on_log(dpp::utility::cout_logger());
 //
@@ -68,38 +70,15 @@ int main() {
 //    });
 //
 //    bot.start(dpp::st_wait);
+//
     return 0;
 }
 
 std::string get_token() {
-    std::ifstream input {"../resources/config.json"};
-    if (!input)
-        throw std::runtime_error {"Cannot locate config file"};
+    ConfigManager::init();
+    if (!ConfigManager::data.contains("bot-token")) throw std::runtime_error {"Config file does not contain bot token"};
 
-    nlohmann::json data;
-    input >> data;
-    std::cout << data << std::endl;
-
-    if (!data.contains("bot-token")) throw std::runtime_error {"Config file does not contain bot token"};
-
-    std::string token {data["bot-token"]};
-    input.close();
-    return token;
-}
-
-std::string get_sql_connection() {
-    std::ifstream input {"../resources/config.json"};
-    if (!input)
-        throw std::runtime_error {"Cannot locate config file"};
-
-    nlohmann::json data;
-    input >> data;
-    std::cout << data << std::endl;
-
-    if (!data.contains("sql-connection-string")) throw std::runtime_error {"Config file does not contain connection!"};
-
-    std::string token {data["sql-connection-string"]};
-    input.close();
+    std::string token {ConfigManager::data["bot-token"]};
     return token;
 }
 
