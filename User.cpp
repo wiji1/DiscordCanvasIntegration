@@ -4,7 +4,6 @@
 #include "include/exceptions/DocumentNotFoundException.h"
 #include <json.h>
 #include <sstream>
-#include <vector>
 #include <bsoncxx/document/view.hpp>
 
 User::User(const std::string &user_token, long discord_id) : discord_id {discord_id} {

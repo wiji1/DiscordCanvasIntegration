@@ -28,6 +28,7 @@ int main() {
     bot->on_ready([&](const dpp::ready_t & event) {
         if (dpp::run_once<struct register_bot_commands>()) {
             bot->global_command_create(dpp::slashcommand("verify", "verification", bot->me.id));
+            bot->global_command_create(dpp::slashcommand("test", "testing", bot->me.id));
         }
     });
 
@@ -56,6 +57,15 @@ int main() {
                             set_text_style(dpp::text_paragraph)
             );
             event.dialog(modal);
+        }
+
+        if (event.command.get_command_name() == "test") {
+
+            User user {static_cast<long>(event.command.get_issuing_user().id)};
+            event.reply(std::string("Hi"));
+            std::cout << user.discord_id << " " << user.user_id << " " << user.name << " [";
+            for (const auto &item: user.courses) std::cout << item << ", ";
+            std::cout << "] " << std::endl;
         }
     });
 

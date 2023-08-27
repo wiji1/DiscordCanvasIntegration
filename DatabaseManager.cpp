@@ -27,7 +27,7 @@ void DatabaseManager::init() {
 }
 
 bsoncxx::document::view DatabaseManager::fetch_user_document(long id) {
-    auto find_one_filtered_result = user_collection.find_one(make_document(kvp("_id", bsoncxx::types::b_int64{id})));
+    auto find_one_filtered_result = user_collection.find_one(make_document(kvp("discord_id", bsoncxx::types::b_int64{id})));
     if (find_one_filtered_result) {
         bsoncxx::document::view doc_view = find_one_filtered_result->view();
         return doc_view;
