@@ -71,6 +71,9 @@ int main() {
         for (const auto &item: user.courses) std::cout << item << ", ";
         std::cout << "] " << std::endl;
 
+
+        user.save();
+
         m.set_content("You entered: " + v).set_flags(dpp::m_ephemeral);
         event.reply(m);
     });
