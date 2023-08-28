@@ -6,14 +6,15 @@
 
 class User {
 public:
-    explicit User(const std::string& user_token, long discord_id);
+    explicit User(std::string  user_token, long discord_id);
     explicit User(long discord_id);
 
+    void update();
     void save() const;
 
     long discord_id;
     std::string user_token;
-    long user_id;
+    long user_id{};
     std::string name;
 
     std::vector<long> courses;

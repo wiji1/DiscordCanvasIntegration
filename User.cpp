@@ -5,9 +5,40 @@
 #include <json.h>
 #include <sstream>
 #include <bsoncxx/document/view.hpp>
+#include <utility>
 
-User::User(const std::string &user_token, long discord_id) : discord_id {discord_id} {
-    std::cout << "Test" << std::endl;
+User::User(std::string user_token, long discord_id) :
+    discord_id {discord_id}, user_token {std::move(user_token)} {
+    update();
+}
+
+User::User(long discord_id) : discord_id {discord_id} {
+    bsoncxx::document::value document{DatabaseManager::fetch_user_document(discord_id)};
+
+    user_id = {document.find("_id")->get_int64()};
+    user_token = {document["token"].get_string().value.to_string()};
+    name = document["name"].get_string().value.to_string();
+
+    auto course_array{document["courses"]};
+    bsoncxx::array::view course_view = course_array.get_array();
+
+    for (const auto &course_value: course_view) {
+        courses.push_back(course_value.get_int64());
+    }
+}
+
+void User::save() const {
+    try {
+        DatabaseManager::fetch_user_document(discord_id);
+    } catch (DocumentNotFoundException &ex) {
+        DatabaseManager::insert_user(*this);
+        return;
+    }
+
+    DatabaseManager::update_user(*this);
+}
+
+void User::update() {
     auto user_promise = CanvasAPI::get_user_profile(user_token);
     std::stringstream profile_stream {user_promise->get_future().get()};
     nlohmann::json profile_data;
@@ -27,33 +58,5 @@ User::User(const std::string &user_token, long discord_id) : discord_id {discord
     for(const auto &course : courses_data) {
         courses.push_back(course["id"]);
     }
-}
-
-User::User(long discord_id) : discord_id {discord_id} {
-    bsoncxx::document::view document{DatabaseManager::fetch_user_document(discord_id)};
-
-    user_token = {document["token"].get_string().value.to_string()};
-    user_id = {document["_id"].get_int64()};
-    name = document["name"].get_string().value.to_string();
-
-    auto course_array{document["courses"]};
-    bsoncxx::array::view course_view = course_array.get_array();
-
-    for (const auto &course_value: course_view) {
-        courses.push_back(course_value.get_int64());
-    }
-
-}
-
-
-void User::save() const {
-    try {
-        DatabaseManager::fetch_user_document(discord_id);
-    } catch (DocumentNotFoundException &ex) {
-        DatabaseManager::insert_user(*this);
-        return;
-    }
-
-    DatabaseManager::update_user(*this);
 }
 

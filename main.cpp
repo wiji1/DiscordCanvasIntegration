@@ -11,7 +11,6 @@
 #include "include/User.h"
 
 std::string get_token();
-void make_request(const std::string &token);
 
 std::unique_ptr<dpp::cluster> bot {nullptr};
 
@@ -66,13 +65,13 @@ int main() {
             std::cout << user.discord_id << " " << user.user_id << " " << user.name << " [";
             for (const auto &item: user.courses) std::cout << item << ", ";
             std::cout << "] " << std::endl;
+
+            user.update();
+            user.save();
         }
     });
 
     bot->on_form_submit([&](const dpp::form_submit_t & event) {
-        /* For this simple example we know the first element of the first row ([0][0]) is value type string.
-         * In the real world it may not be safe to make such assumptions!
-         */
         std::string v = std::get<std::string>(event.components[0].components[0].value);
         dpp::message m;
 
@@ -99,21 +98,6 @@ std::string get_token() {
 
     std::string token {ConfigManager::data["bot-token"]};
     return token;
-}
-
-void make_request(const std::string &token) {
-    bot->request(
-            "https://canvas.instructure.com/api/v1/users/self/profile", dpp::m_get, [](const dpp::http_request_completion_t & cc) {
-//            "https://canvas.instructure.com/api/v1/courses", dpp::m_get, [](const dpp::http_request_completion_t & cc) {
-                // This callback is called when the HTTP request completes. See documentation of
-                // dpp::http_request_completion_t for information on the fields in the parameter.
-                std::cout << "I got reply: " << cc.body << " with HTTP status code: " << cc.status << "\n";
-            }, "",
-            "application/json",
-            {
-                    {"Authorization", "Bearer " + token }
-            }
-    );
 }
 
 
