@@ -53,6 +53,7 @@ void User::update() {
     std::stringstream courses_stream {courses_promise->get_future().get()};
     nlohmann::json courses_data;
 
+    courses.clear();
     courses_stream >> courses_data;
 
     for(const auto &course : courses_data) {
