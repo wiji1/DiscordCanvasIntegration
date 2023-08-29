@@ -9,6 +9,7 @@
 #include "include/ConfigManager.h"
 #include "include/DatabaseManager.h"
 #include "include/User.h"
+#include "include/CanvasAPI.h"
 
 std::string get_token();
 
@@ -62,12 +63,14 @@ int main() {
 
             User user {static_cast<long>(event.command.get_issuing_user().id)};
             event.reply(std::string("Hi"));
-            std::cout << user.discord_id << " " << user.user_id << " " << user.name << " [";
-            for (const auto &item: user.courses) std::cout << item << ", ";
-            std::cout << "] " << std::endl;
+//            std::cout << user.discord_id << " " << user.user_id << " " << user.name << " [";
+//            for (const auto &item: user.courses) std::cout << item << ", ";
+//            std::cout << "] " << std::endl;
+
 
             user.update();
             user.save();
+//            std::cout << CanvasAPI::get_course(user.courses[0], user.user_token)->get_future().get();
         }
     });
 
@@ -79,7 +82,6 @@ int main() {
         std::cout << user.discord_id << " " << user.user_id << " " << user.name << " [";
         for (const auto &item: user.courses) std::cout << item << ", ";
         std::cout << "] " << std::endl;
-
 
         user.save();
 

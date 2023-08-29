@@ -23,7 +23,24 @@ std::shared_ptr<std::promise<std::string>> CanvasAPI::get_user_courses(const std
     auto promise = std::make_shared<std::promise<std::string>>();
 
     bot->request(
-            "https://canvas.instructure.com/api/v1/courses", dpp::m_get, [&promise](const dpp::http_request_completion_t & cc) {
+            "https://canvas.instructure.com/api/v1/courses?per_page=300",
+            dpp::m_get, [&promise](const dpp::http_request_completion_t & cc) {
+                promise->set_value(cc.body);
+            }, "",
+            "application/json",
+            {
+                    {"Authorization", "Bearer " + user_token }
+            }
+    );
+    return promise;
+}
+
+std::shared_ptr<std::promise<std::string>> CanvasAPI::get_course(long course_id, const std::string &user_token) {
+    auto promise = std::make_shared<std::promise<std::string>>();
+
+    bot->request(
+            "https://canvas.instructure.com/api/v1/courses/" + std::to_string(course_id), dpp::m_get,
+            [&promise](const dpp::http_request_completion_t & cc) {
                 promise->set_value(cc.body);
             }, "",
             "application/json",

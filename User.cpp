@@ -2,6 +2,7 @@
 #include "include/CanvasAPI.h"
 #include "include/DatabaseManager.h"
 #include "include/exceptions/DocumentNotFoundException.h"
+#include "include/Misc.h"
 #include <json.h>
 #include <sstream>
 #include <bsoncxx/document/view.hpp>
@@ -56,7 +57,33 @@ void User::update() {
     courses.clear();
     courses_stream >> courses_data;
 
-    for(const auto &course : courses_data) {
+    long term_id_of_most_recent = 0;
+
+    for (const auto &course : courses_data) {
+
+        if (!course.contains("id") || !course.contains("enrollment_term_id")) {
+            continue;
+        }
+
+        if (course["id"].is_null() || course["enrollment_term_id"].is_null()) {
+            continue;
+        }
+
+        long term_id {course["enrollment_term_id"]};
+        if(term_id > term_id_of_most_recent) term_id_of_most_recent = term_id;
+    }
+
+    for (const auto &course : courses_data) {
+        if (!course.contains("id") || !course.contains("enrollment_term_id")) {
+            continue;
+        }
+
+        if (course["id"].is_null() || course["enrollment_term_id"].is_null()) {
+            continue;
+        }
+
+        if(course["enrollment_term_id"] != term_id_of_most_recent) continue;
+
         courses.push_back(course["id"]);
     }
 }
