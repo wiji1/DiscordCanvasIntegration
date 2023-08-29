@@ -1,15 +1,10 @@
 #include <iostream>
-#include <cstdio>
 #include <string>
-#include <fstream>
-#include <stack>
 #include <dpp/dpp.h>
-#include <mongocxx/client.hpp>
 #include <mongocxx/instance.hpp>
 #include "include/ConfigManager.h"
 #include "include/DatabaseManager.h"
 #include "include/User.h"
-#include "include/CanvasAPI.h"
 
 std::string get_token();
 

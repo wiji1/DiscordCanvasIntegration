@@ -2,6 +2,7 @@
 #define LEARNINGCPP_COURSE_H
 
 #include <string>
+#include <vector>
 
 class Course {
 public:
@@ -9,11 +10,11 @@ public:
 
     void update();
     void save() const;
+    std::string find_accessor();
 
     long course_id;
     std::string name;
-    std::string user_token;
-    long user_id{};
+    std::vector<long> trackingGuilds;
 
 };
 
