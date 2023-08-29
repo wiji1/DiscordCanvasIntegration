@@ -1,5 +1,5 @@
-#ifndef LEARNINGCPP_USER_H
-#define LEARNINGCPP_USER_H
+#ifndef DISCORDCANVASINTEGRATION_USER_H
+#define DISCORDCANVASINTEGRATION_USER_H
 
 #include <string>
 #include <vector>
