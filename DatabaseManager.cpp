@@ -40,8 +40,18 @@ bsoncxx::document::value DatabaseManager::fetch_user_document(long id) {
     assert(find_one_filtered_result);
 }
 
-std::string DatabaseManager::fetch_course_document(long id) {
-    return std::string();
+bsoncxx::document::value DatabaseManager::fetch_course_document(long id) {
+    auto find_one_filtered_result = course_collection.find_one(make_document(kvp("_id", bsoncxx::types::b_int64{id})));
+    if (find_one_filtered_result) {
+        bsoncxx::document::value doc = find_one_filtered_result.value();
+        return doc;
+    } else {
+        std::stringstream long_stream {};
+        long_stream >> id;
+
+        throw DocumentNotFoundException {"Document with id " + long_stream.str() + " was not found!"};
+    }
+    assert(find_one_filtered_result);
 }
 
 void DatabaseManager::update_user(const User &user) {

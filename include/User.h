@@ -16,8 +16,8 @@
 
         std::vector<long> courses;
 
-        static User create_user(std::string user_token, long discord_id);
-        static User get_user(long discord_id);
+        static User &create_user(std::string user_token, long discord_id);
+        static User &get_user(long discord_id);
 
         void update();
         void save() const;

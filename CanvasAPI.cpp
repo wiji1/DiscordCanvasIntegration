@@ -41,6 +41,7 @@ std::shared_ptr<std::promise<std::string>> CanvasAPI::get_course(long course_id,
     bot->request(
             "https://canvas.instructure.com/api/v1/courses/" + std::to_string(course_id), dpp::m_get,
             [&promise](const dpp::http_request_completion_t & cc) {
+                //TODO: Throw exception here and find a new accessor
                 promise->set_value(cc.body);
             }, "",
             "application/json",

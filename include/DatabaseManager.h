@@ -16,7 +16,7 @@ public:
 
     static void init();
     static bsoncxx::document::value fetch_user_document(long id);
-    static std::string fetch_course_document(long id);
+    static bsoncxx::document::value fetch_course_document(long id);
 
     static void update_user(const User& user);
     static void insert_user(const User& user);
