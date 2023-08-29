@@ -2,10 +2,8 @@
 #include "include/CanvasAPI.h"
 #include "include/DatabaseManager.h"
 #include "include/exceptions/DocumentNotFoundException.h"
-#include "include/Misc.h"
 #include <json.h>
 #include <sstream>
-#include <bsoncxx/document/view.hpp>
 #include <utility>
 
 std::unordered_map<long, std::unique_ptr<User>> User::user_map;

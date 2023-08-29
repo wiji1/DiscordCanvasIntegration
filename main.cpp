@@ -85,8 +85,6 @@ int main() {
         std::cout << "] " << std::endl;
 
         user.save();
-
-
     });
 
     bot->start(dpp::st_wait);
