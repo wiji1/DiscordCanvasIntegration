@@ -1,5 +1,9 @@
-//
-// Created by Elliott Lewentein on 8/28/23.
-//
+#include "include/Guild.h"
 
-#include "Guild.h"
+void Guild::add_tracked_course(long course_id) {
+
+}
+
+void Guild::remove_tracked_course(long course_id) {
+
+}
