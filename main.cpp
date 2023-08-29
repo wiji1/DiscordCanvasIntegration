@@ -78,6 +78,9 @@ int main() {
         std::string v = std::get<std::string>(event.components[0].components[0].value);
         dpp::message m;
 
+        m.set_content("You entered: " + v).set_flags(dpp::m_ephemeral);
+        event.reply(m);
+
         User user {v, static_cast<long>(event.command.get_issuing_user().id)};
         std::cout << user.discord_id << " " << user.user_id << " " << user.name << " [";
         for (const auto &item: user.courses) std::cout << item << ", ";
@@ -85,8 +88,7 @@ int main() {
 
         user.save();
 
-        m.set_content("You entered: " + v).set_flags(dpp::m_ephemeral);
-        event.reply(m);
+
     });
 
     bot->start(dpp::st_wait);

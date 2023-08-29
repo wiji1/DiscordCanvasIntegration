@@ -84,6 +84,9 @@ void User::update() {
 
         if(course["enrollment_term_id"] != term_id_of_most_recent) continue;
 
+
+        std::cout << course["name"] << " " << course["enrollment_term_id"] << std::endl;
+
         courses.push_back(course["id"]);
     }
 }
