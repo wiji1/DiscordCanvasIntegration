@@ -5,6 +5,7 @@
 #include "include/ConfigManager.h"
 #include "include/DatabaseManager.h"
 #include "include/User.h"
+#include "include/exceptions/DocumentNotFoundException.h"
 
 std::string get_token();
 
@@ -56,16 +57,18 @@ int main() {
 
         if (event.command.get_command_name() == "test") {
 
-            User user {static_cast<long>(event.command.get_issuing_user().id)};
-            event.reply(std::string("Hi"));
+            try {
+                User user {User::get_user(static_cast<long>(event.command.get_issuing_user().id))};
+//            User user {static_cast<long>(event.command.get_issuing_user().id)};
+                event.reply(std::string("Hi"));
 //            std::cout << user.discord_id << " " << user.user_id << " " << user.name << " [";
 //            for (const auto &item: user.courses) std::cout << item << ", ";
 //            std::cout << "] " << std::endl;
 
 
-            user.update();
-            user.save();
-//            std::cout << CanvasAPI::get_course(user.courses[0], user.user_token)->get_future().get();
+                user.update();
+                user.save();
+            } catch(DocumentNotFoundException &ex) { std::cout << ex.what() << std::endl; }
         }
     });
 
@@ -76,7 +79,7 @@ int main() {
         m.set_content("You entered: " + v).set_flags(dpp::m_ephemeral);
         event.reply(m);
 
-        User user {v, static_cast<long>(event.command.get_issuing_user().id)};
+        User user {User::create_user(v, static_cast<long>(event.command.get_issuing_user().id))};
         std::cout << user.discord_id << " " << user.user_id << " " << user.name << " [";
         for (const auto &item: user.courses) std::cout << item << ", ";
         std::cout << "] " << std::endl;

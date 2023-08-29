@@ -2,7 +2,7 @@
 #define DISCORDCANVASINTEGRATION_GUILD_H
 
 #include <vector>
-#include "include/TrackedCourse.h"
+#include "TrackedCourse.h"
 
 class Guild {
 public:

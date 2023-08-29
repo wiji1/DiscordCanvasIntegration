@@ -65,9 +65,9 @@ void DatabaseManager::update_user(const User &user) {
     auto update = DatabaseManager::user_collection.update_one(
             make_document(kvp("_id", bsoncxx::types::b_int64{user.user_id})),
             update_doc.view());
-
+    
     assert(update);
-    assert(update->modified_count() == 1);
+    assert(update->modified_count() <= 1);
 }
 
 void DatabaseManager::insert_user(const User &user) {
