@@ -64,7 +64,32 @@ void Course::update(const std::string &override_token) {
 User &Course::find_accessor() {
     for(const auto &guild_id: tracking_guilds) {
         Guild guild {Guild::get_guild(guild_id)};
-        if(guild.trac)
+
+        if (guild.tracked_courses.count(course_id) < 1) {
+            guild.update();
+            continue;
+        }
+
+        TrackedCourse tracked_course = *(guild.tracked_courses[course_id]);
+        auto role {dpp::find_role(tracked_course.role_id)};
+
+        auto discord_guild {dpp::find_guild(guild_id)};
+
+        for (const auto &member: discord_guild->members) {
+            int count = std::count(
+                    member.second.roles.begin(),
+                    member.second.roles.end(),
+                    role->id
+            );
+
+            if (count > 0) {
+                return User::get_user(static_cast<long>(member.first));
+            }
+        }
+
+        if(!guild.is_tracking(*this)) continue;
+
+
 
 
         for(const auto &item: dpp::find_guild(guild_id)->members) {

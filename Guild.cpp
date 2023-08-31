@@ -19,14 +19,9 @@ std::vector<Guild> Guild::get_tracking_guilds(Course &course) {
     std::vector<Guild> guildsTrackingCourse;
 
     for(const auto &guild_pair : guild_map) {
-        const Guild &guild = *guild_pair.second;
+        Guild guild = *guild_pair.second;
 
-        for (const TrackedCourse &tracked_course: guild.tracked_courses) {
-            if (tracked_course.course_id == course.course_id) {
-                guildsTrackingCourse.push_back(guild);
-                break;
-            }
-        }
+        if(guild.is_tracking(course)) guildsTrackingCourse.push_back(guild);
     }
     return guildsTrackingCourse;
 }
@@ -47,4 +42,14 @@ void Guild::register_guild(long guild_id) {
 
 Guild Guild::get_guild(long guild_id) {
     return Guild(0);
+}
+
+bool Guild::is_tracking(Course &course) {
+    for(const auto &tracked_course: tracked_courses) {
+        if(tracked_course.course_id == course.course_id) {
+            return true;
+        }
+    }
+
+    return false;
 }

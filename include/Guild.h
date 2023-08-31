@@ -11,7 +11,7 @@ class Guild {
 private:
     static std::unordered_map<long, std::unique_ptr<Guild>> guild_map;
 public:
-    std::vector<TrackedCourse> tracked_courses;
+    std::unordered_map<long, std::unique_ptr<TrackedCourse>> tracked_courses;
     std::vector<long> verified_users;
     long guild_id;
     long verified_role_id;
@@ -19,6 +19,7 @@ public:
     void add_tracked_course(long course_id);
     void remove_tracked_course(long course_id);
     void create_verified_role();
+    bool is_tracking(Course &course);
 
     static void register_guild(long guild_id);
     static Guild get_guild(long guild_id);
