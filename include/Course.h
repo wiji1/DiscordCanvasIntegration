@@ -11,9 +11,9 @@ private:
 public:
     long course_id;
     std::string name;
-    std::vector<long> trackingGuilds;
+    std::vector<long> tracking_guilds;
 
-    void update();
+    void update(const std::string &override_token = "");
     void save() const;
     User &find_accessor();
 

@@ -2,6 +2,7 @@
 #define DISCORDCANVASINTEGRATION_DATABASEMANAGER_H
 
 #include "User.h"
+#include "Course.h"
 #include <mongocxx/client.hpp>
 #include <mongocxx/instance.hpp>
 #include <string>
@@ -20,6 +21,9 @@ public:
 
     static void update_user(const User& user);
     static void insert_user(const User& user);
+
+    static void update_course(const Course& course);
+    static void insert_course(const Course& course);
 
 };
 

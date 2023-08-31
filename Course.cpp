@@ -3,23 +3,42 @@
 #include "include/DatabaseManager.h"
 #include "include/exceptions/DocumentNotFoundException.h"
 #include "include/CanvasAPI.h"
+#include "include/Guild.h"
+#include <vector>
 
-Course::Course(long course_id) : course_id {course_id} {
-
+Course::Course(long course_id, const std::string &access_token) : course_id {course_id} {
+    update(access_token);
 }
 
-Course::Course(long course_id, const std::string &access_token) {
+Course::Course(long course_id) : course_id {course_id} {
+    bsoncxx::document::value document{DatabaseManager::fetch_user_document(course_id)};
 
+    name = document["name"].get_string().value.to_string();
+
+    auto guild_array{document["tracking_guilds"]};
+    bsoncxx::array::view guild_view = guild_array.get_array();
+
+    for (const auto &guild_value: guild_view) {
+        tracking_guilds.push_back(guild_value.get_int64());
+    }
 }
 
 void Course::save() const {
+    try {
+        DatabaseManager::fetch_course_document(course_id);
+    } catch (DocumentNotFoundException &ex) {
+        DatabaseManager::insert_course(*this);
+        return;
+    }
 
+    DatabaseManager::update_course(*this);
 }
 
-void Course::update() {
-    User accessor {find_accessor()};
+void Course::update(const std::string &override_token) {
+    std::string accessor_token {override_token};
+    if(accessor_token.empty()) accessor_token = {find_accessor().user_token};
 
-    auto promise {CanvasAPI::get_course(course_id, accessor.user_token)};
+    auto promise {CanvasAPI::get_course(course_id, accessor_token)};
 
     std::stringstream stream {promise->get_future().get()};
     nlohmann::json data;
@@ -29,11 +48,25 @@ void Course::update() {
     course_id = {data["id"]};
     name = {data["course_code"]};
 
-    //TODO: Loop through all guilds and search for tracked courses
+    std::vector<Guild> guild_list {Guild::get_tracking_guilds(*this)};
+    std::vector<long> guild_id_list {};
+
+    tracking_guilds.clear();
+    guild_id_list.reserve(guild_list.size());
+
+    for (const Guild &guild : guild_list) {
+        guild_id_list.push_back(guild.guild_id);
+    }
+
+    tracking_guilds = {guild_id_list};
 }
 
 User &Course::find_accessor() {
-    for(const auto &guild_id: trackingGuilds) {
+    for(const auto &guild_id: tracking_guilds) {
+        Guild guild {Guild::get_guild(guild_id)};
+        if(guild.trac)
+
+
         for(const auto &item: dpp::find_guild(guild_id)->members) {
 
         }

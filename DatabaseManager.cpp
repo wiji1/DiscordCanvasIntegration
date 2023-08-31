@@ -55,7 +55,6 @@ bsoncxx::document::value DatabaseManager::fetch_course_document(long id) {
 }
 
 void DatabaseManager::update_user(const User &user) {
-
     bsoncxx::builder::basic::array courses_array_builder;
     for (const long &course : user.courses) {
         courses_array_builder.append(bsoncxx::types::b_int64{course});
@@ -95,6 +94,47 @@ void DatabaseManager::insert_user(const User &user) {
     );
 
     auto create = DatabaseManager::user_collection.insert_one(create_doc.view());
+
+    assert(create);
+}
+
+void DatabaseManager::update_course(const Course &course) {
+    bsoncxx::builder::basic::array guilds_array_builder;
+    for (const long &guild : course.tracking_guilds) {
+        guilds_array_builder.append(bsoncxx::types::b_int64{guild});
+    }
+
+    auto update_doc = make_document(
+            kvp("$set",
+                make_document(
+                        kvp("id_", static_cast<int64_t>(course.course_id)),
+                        kvp("name", course.name),
+                        kvp("tracking_guilds", guilds_array_builder.view())
+                )
+            )
+    );
+
+    auto update = DatabaseManager::course_collection.update_one(
+            make_document(kvp("_id", bsoncxx::types::b_int64{course.course_id})),
+            update_doc.view());
+
+    assert(update);
+    assert(update->modified_count() <= 1);
+}
+
+void DatabaseManager::insert_course(const Course &course) {
+    bsoncxx::builder::basic::array guilds_array_builder;
+    for (const long &guild : course.tracking_guilds) {
+        guilds_array_builder.append(bsoncxx::types::b_int64{guild});
+    }
+
+    auto create_doc = make_document(
+            kvp("_id", bsoncxx::types::b_int64{course.course_id}),
+            kvp("name", course.name),
+            kvp("courses", guilds_array_builder.view())
+    );
+
+    auto create = DatabaseManager::course_collection.insert_one(create_doc.view());
 
     assert(create);
 }
