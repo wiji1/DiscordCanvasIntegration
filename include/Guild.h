@@ -4,7 +4,7 @@
 #include <vector>
 #include <unordered_map>
 #include "TrackedCourse.h"
-#include "include/Course.h"
+#include "Course.h"
 #include <vector>
 
 class Guild {
@@ -19,7 +19,7 @@ public:
     void add_tracked_course(long course_id);
     void remove_tracked_course(long course_id);
     void create_verified_role();
-    bool is_tracking(Course &course);
+    bool is_tracking(const Course &course);
 
     static void register_guild(long guild_id);
     static Guild get_guild(long guild_id);

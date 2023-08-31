@@ -44,9 +44,9 @@ Guild Guild::get_guild(long guild_id) {
     return Guild(0);
 }
 
-bool Guild::is_tracking(Course &course) {
-    for(const auto &tracked_course: tracked_courses) {
-        if(tracked_course.course_id == course.course_id) {
+bool Guild::is_tracking(const Course &course) {
+    for(const auto &tracked_course : tracked_courses) {
+        if (tracked_course.first == course.course_id) {
             return true;
         }
     }
