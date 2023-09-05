@@ -3,6 +3,7 @@
 
 #include "User.h"
 #include "Course.h"
+#include "Guild.h"
 #include <mongocxx/client.hpp>
 #include <mongocxx/instance.hpp>
 #include <string>
@@ -14,16 +15,21 @@ public:
 
     static mongocxx::collection user_collection;
     static mongocxx::collection course_collection;
+    static mongocxx::collection guild_collection;
 
     static void init();
     static bsoncxx::document::value fetch_user_document(long id);
     static bsoncxx::document::value fetch_course_document(long id);
+    static bsoncxx::document::value fetch_guild_document(long id);
 
     static void update_user(const User& user);
     static void insert_user(const User& user);
 
     static void update_course(const Course& course);
     static void insert_course(const Course& course);
+
+    static void update_guild(const Guild& guild);
+    static void insert_guild(const Guild& guild);
 
 };
 

@@ -6,6 +6,8 @@
 #include "include/Guild.h"
 #include <vector>
 
+std::unordered_map<long, std::unique_ptr<Course>> Course::course_map;
+
 Course::Course(long course_id, const std::string &access_token) : course_id {course_id} {
     update(access_token);
 }
@@ -65,12 +67,17 @@ User &Course::find_accessor() {
     for(const auto &guild_id: tracking_guilds) {
         Guild guild {Guild::get_guild(guild_id)};
 
-        if (guild.tracked_courses.count(course_id) < 1) {
+        std::shared_ptr<TrackedCourse> tracked_course_ptr {nullptr};
+        for(const auto &item: guild.tracked_courses) {
+            if(item->course_id == course_id) tracked_course_ptr = item;
+        }
+
+        if(tracked_course_ptr == nullptr) {
             guild.update();
             continue;
         }
 
-        TrackedCourse tracked_course = *(guild.tracked_courses[course_id]);
+        TrackedCourse tracked_course = *tracked_course_ptr;
         auto role {dpp::find_role(tracked_course.role_id)};
 
         auto discord_guild {dpp::find_guild(guild_id)};
@@ -88,9 +95,6 @@ User &Course::find_accessor() {
         }
 
         if(!guild.is_tracking(*this)) continue;
-
-
-
 
         for(const auto &item: dpp::find_guild(guild_id)->members) {
 

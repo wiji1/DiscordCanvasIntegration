@@ -14,7 +14,7 @@ User::User(std::string user_token, long discord_id) :
 }
 
 User::User(long discord_id) : discord_id {discord_id} {
-    bsoncxx::document::value document{DatabaseManager::fetch_user_document(discord_id)};
+    bsoncxx::document::value document {DatabaseManager::fetch_user_document(discord_id)};
 
     user_id = {document.find("_id")->get_int64()};
     user_token = {document["token"].get_string().value.to_string()};
@@ -88,6 +88,7 @@ void User::update() {
         std::cout << course["name"] << " " << course["enrollment_term_id"] << std::endl;
 
         courses.push_back(course["id"]);
+        Course::get_or_create(course["id"], user_token);
     }
 }
 

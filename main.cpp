@@ -6,6 +6,7 @@
 #include "include/DatabaseManager.h"
 #include "include/User.h"
 #include "include/exceptions/DocumentNotFoundException.h"
+#include "include/Guild.h"
 
 std::string get_token();
 

@@ -24,6 +24,7 @@ void DatabaseManager::init() {
     database = client["canvas"];
     user_collection = database["users"];
     course_collection = database["courses"];
+    guild_collection = database["guilds"];
 }
 
 bsoncxx::document::value DatabaseManager::fetch_user_document(long id) {
@@ -42,6 +43,20 @@ bsoncxx::document::value DatabaseManager::fetch_user_document(long id) {
 
 bsoncxx::document::value DatabaseManager::fetch_course_document(long id) {
     auto find_one_filtered_result = course_collection.find_one(make_document(kvp("_id", bsoncxx::types::b_int64{id})));
+    if (find_one_filtered_result) {
+        bsoncxx::document::value doc = find_one_filtered_result.value();
+        return doc;
+    } else {
+        std::stringstream long_stream {};
+        long_stream >> id;
+
+        throw DocumentNotFoundException {"Document with id " + long_stream.str() + " was not found!"};
+    }
+    assert(find_one_filtered_result);
+}
+
+bsoncxx::document::value DatabaseManager::fetch_guild_document(long id) {
+    auto find_one_filtered_result = guild_collection.find_one(make_document(kvp("_id", bsoncxx::types::b_int64{id})));
     if (find_one_filtered_result) {
         bsoncxx::document::value doc = find_one_filtered_result.value();
         return doc;
@@ -139,6 +154,68 @@ void DatabaseManager::insert_course(const Course &course) {
     assert(create);
 }
 
+void DatabaseManager::update_guild(const Guild &guild) {
+    bsoncxx::builder::basic::array users_array_builder;
+    for (const long &user : guild.verified_users) {
+        users_array_builder.append(bsoncxx::types::b_int64{user});
+    }
+
+    bsoncxx::builder::basic::array courses_array_builder;
+    for (const std::shared_ptr<TrackedCourse> &tracked_course : guild.tracked_courses) {
+        bsoncxx::builder::basic::document course_doc_builder;
+        course_doc_builder.append(kvp("course_id", static_cast<int64_t>(tracked_course->course_id)));
+        course_doc_builder.append(kvp("category_id", static_cast<int64_t>(tracked_course->category_id)));
+        course_doc_builder.append(kvp("announcements_channel", static_cast<int64_t>(tracked_course->announcements_channel)));
+        course_doc_builder.append(kvp("forums_channel", static_cast<int64_t>(tracked_course->forums_channel)));
+        course_doc_builder.append(kvp("role_id", static_cast<int64_t>(tracked_course->role_id)));
+        courses_array_builder.append(course_doc_builder.extract());
+    }
+
+    auto update_doc = make_document(
+            kvp("$set",
+                make_document(
+                        kvp("id_", static_cast<int64_t>(guild.guild_id)),
+                        kvp("verified_users", users_array_builder.view()),
+                        kvp("tracked_courses", courses_array_builder.view())
+                )
+            )
+    );
+
+    auto update = DatabaseManager::guild_collection.update_one(
+            make_document(kvp("_id", bsoncxx::types::b_int64{guild.guild_id})),
+            update_doc.view());
+
+    assert(update);
+    assert(update->modified_count() <= 1);
+}
+
+void DatabaseManager::insert_guild(const Guild &guild) {
+    bsoncxx::builder::basic::array users_array_builder;
+    for (const long &user : guild.verified_users) {
+        users_array_builder.append(bsoncxx::types::b_int64{user});
+    }
+
+    bsoncxx::builder::basic::array courses_array_builder;
+    for (const std::shared_ptr<TrackedCourse> &tracked_course : guild.tracked_courses) {
+        bsoncxx::builder::basic::document course_doc_builder;
+        course_doc_builder.append(kvp("course_id", static_cast<int64_t>(tracked_course->course_id)));
+        course_doc_builder.append(kvp("category_id", static_cast<int64_t>(tracked_course->category_id)));
+        course_doc_builder.append(kvp("announcements_channel", static_cast<int64_t>(tracked_course->announcements_channel)));
+        course_doc_builder.append(kvp("forums_channel", static_cast<int64_t>(tracked_course->forums_channel)));
+        course_doc_builder.append(kvp("role_id", static_cast<int64_t>(tracked_course->role_id)));
+        courses_array_builder.append(course_doc_builder.extract());
+    }
+
+    auto create_doc =  make_document(
+            kvp("id_", static_cast<int64_t>(guild.guild_id)),
+            kvp("verified_users", users_array_builder.view()),
+            kvp("tracked_courses", courses_array_builder.view())
+    );
+
+    auto create = DatabaseManager::course_collection.insert_one(create_doc.view());
+
+    assert(create);
+}
 
 mongocxx::client DatabaseManager::client;
 mongocxx::database DatabaseManager::database;

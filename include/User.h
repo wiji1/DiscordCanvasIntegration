@@ -11,7 +11,7 @@
     public:
         long discord_id;
         std::string user_token;
-        long user_id{};
+        long user_id;
         std::string name;
 
         std::vector<long> courses;
