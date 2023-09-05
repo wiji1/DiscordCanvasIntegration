@@ -12,9 +12,8 @@
 extern std::unique_ptr<dpp::cluster> bot;
 
 class Guild {
-private:
-    static std::unordered_map<long, std::unique_ptr<Guild>> guild_map;
 public:
+    static std::unordered_map<long, std::unique_ptr<Guild>> guild_map;
     std::vector<std::shared_ptr<TrackedCourse>> tracked_courses;
     std::vector<long> verified_users;
 
@@ -28,14 +27,17 @@ public:
 
     static void register_guild(long guild_id);
     static Guild get_guild(long guild_id);
+
+
     void update();
     void save() const;
 
     static std::vector<Guild> get_tracking_guilds(Course &course);
+    static bool is_registered(long guild_id);
 
-    void document_init(const bsoncxx::document::value& document);
+    void document_init(const bsoncxx::document::value &document);
 
-    explicit Guild(const bsoncxx::document::value& document);
+    explicit Guild(bsoncxx::document::value document);
     explicit Guild(long guild_id);
 };
 

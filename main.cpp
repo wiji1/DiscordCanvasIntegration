@@ -26,6 +26,8 @@ int main() {
         if (dpp::run_once<struct register_bot_commands>()) {
             bot->global_command_create(dpp::slashcommand("verify", "verification", bot->me.id));
             bot->global_command_create(dpp::slashcommand("test", "testing", bot->me.id));
+            bot->global_command_create(dpp::slashcommand("setup", "testing", bot->me.id));
+            bot->global_command_create(dpp::slashcommand("save", "testing", bot->me.id));
         }
     });
 
@@ -56,7 +58,7 @@ int main() {
             event.dialog(modal);
         }
 
-        if (event.command.get_command_name() == "test") {
+        if(event.command.get_command_name() == "test") {
 
             try {
                 User user {User::get_user(static_cast<long>(event.command.get_issuing_user().id))};
@@ -71,21 +73,49 @@ int main() {
                 user.save();
             } catch(DocumentNotFoundException &ex) { std::cout << ex.what() << std::endl; }
         }
+
+        if(event.command.get_command_name() == "setup") {
+            long guild_id = event.command.guild_id;
+            if(Guild::is_registered(guild_id)) {
+                event.reply("This guild is already registered!");
+                return;
+            }
+
+            Guild::register_guild(guild_id);
+            event.reply("Guild has been set up!");
+        }
+        if(event.command.get_command_name() == "save") {
+            long guild_id = event.command.guild_id;
+            if(!Guild::is_registered(guild_id)) {
+                event.reply("Guild is not registered!");
+                return;
+            }
+
+            Guild guild {Guild::get_guild(guild_id)};
+            guild.save();
+        }
     });
 
     bot->on_form_submit([&](const dpp::form_submit_t & event) {
         std::string v = std::get<std::string>(event.components[0].components[0].value);
         dpp::message m;
 
+        if(!Guild::is_registered(event.command.guild_id)) {
+            m.set_content("This guild is not registered!").set_flags(dpp::m_ephemeral);
+            event.reply(m);
+            return;
+        }
+
         m.set_content("You entered: " + v).set_flags(dpp::m_ephemeral);
         event.reply(m);
 
         User user {User::create_user(v, static_cast<long>(event.command.get_issuing_user().id))};
-        std::cout << user.discord_id << " " << user.user_id << " " << user.name << " [";
-        for (const auto &item: user.courses) std::cout << item << ", ";
-        std::cout << "] " << std::endl;
+
 
         user.save();
+        Guild guild {Guild::get_guild(event.command.guild_id)};
+        guild.verified_users.push_back(user.discord_id);
+        guild.update();
     });
 
     bot->start(dpp::st_wait);

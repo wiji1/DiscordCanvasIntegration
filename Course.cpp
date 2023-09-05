@@ -110,6 +110,7 @@ Course &Course::get_or_create(long course_id, const std::string &access_token) {
     } catch(DocumentNotFoundException &ignored) { }
 
     course_map[course_id] = std::make_unique<Course>(course_id, access_token);
+    course_map[course_id]->save();
     return *course_map[course_id];
 }
 

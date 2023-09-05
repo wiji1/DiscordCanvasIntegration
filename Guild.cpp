@@ -5,6 +5,7 @@
 
 std::unordered_map<long, std::unique_ptr<Guild>> Guild::guild_map;
 
+//TODO: Add a cleanup method to make testing easier (Delete roles and channels through remove_tracked_courses method)
 
 Guild::Guild(long guild_id) : guild_id {guild_id} {
     try {
@@ -18,7 +19,7 @@ Guild::Guild(long guild_id) : guild_id {guild_id} {
     }
 }
 
-Guild::Guild(const bsoncxx::document::value &document) {
+Guild::Guild(bsoncxx::document::value document) {
     document_init(document);
 }
 
@@ -53,6 +54,43 @@ void Guild::add_tracked_course(long course_id) {
     Course course {Course::get_course(course_id)};
     std::shared_ptr<TrackedCourse> tracked_course {tracked_courses.emplace_back()};
 
+    //TODO: Fix issue with only role and category channel being created and figure out how to properly save the guild.
+    // Saving is currently done through the /save command
+
+    dpp::channel category {};
+    category.set_guild_id(guild_id);
+    category.set_type(dpp::channel_type::CHANNEL_CATEGORY);
+    category.set_name(course.name);
+
+    bot->channel_create(category, [&tracked_course, this](auto& callback) {
+
+        dpp::channel category = std::get<dpp::channel>(callback.value);
+        tracked_course->category_id = static_cast<long>(category.id);
+
+        dpp::channel forums {};
+        forums.set_guild_id(guild_id);
+        forums.set_type(dpp::channel_type::CHANNEL_FORUM);
+        forums.set_parent_id(category.id);
+        forums.set_name("Assignments");
+
+        bot->channel_create(forums, [&tracked_course](auto& callback) {
+
+            dpp::channel forums = std::get<dpp::channel>(callback.value);
+            tracked_course->forums_channel = static_cast<long>(forums.id);
+        });
+
+        dpp::channel announcements {};
+        announcements.set_guild_id(guild_id);
+        announcements.set_type(dpp::channel_type::CHANNEL_ANNOUNCEMENT);
+        announcements.set_parent_id(category.id);
+        announcements.set_name("Announcements");
+
+        bot->channel_create(announcements, [&tracked_course](auto& callback) {
+            dpp::channel announcements = std::get<dpp::channel>(callback.value);
+            tracked_course->announcements_channel = static_cast<long>(announcements.id);
+        });
+    });
+
     dpp::role course_role;
     course_role.guild_id = guild_id;
     course_role.set_name(course.name);
@@ -62,39 +100,6 @@ void Guild::add_tracked_course(long course_id) {
 
         dpp::role role = std::get<dpp::role>(callback.value);
         tracked_course->role_id = static_cast<long>(role.id);
-    });
-
-    dpp::channel category {};
-    category.set_guild_id(guild_id);
-    category.set_type(dpp::channel_type::CHANNEL_CATEGORY);
-    category.set_name(course.name);
-
-    bot->channel_create(category, [&tracked_course](auto& callback) {
-
-        dpp::channel category = std::get<dpp::channel>(callback.value);
-        tracked_course->category_id = static_cast<long>(category.id);
-    });
-
-    dpp::channel forums {};
-    forums.set_guild_id(guild_id);
-    forums.set_type(dpp::channel_type::CHANNEL_FORUM);
-    forums.set_name("Assignments");
-
-    bot->channel_create(forums, [&tracked_course](auto& callback) {
-
-        dpp::channel forums = std::get<dpp::channel>(callback.value);
-        tracked_course->forums_channel = static_cast<long>(forums.id);
-    });
-
-    dpp::channel announcements {};
-    announcements.set_guild_id(guild_id);
-    announcements.set_type(dpp::channel_type::CHANNEL_ANNOUNCEMENT);
-    announcements.set_name("Announcements");
-
-    bot->channel_create(announcements, [&tracked_course](auto& callback) {
-
-        dpp::channel announcements = std::get<dpp::channel>(callback.value);
-        tracked_course->announcements_channel = static_cast<long>(announcements.id);
     });
 }
 
@@ -120,28 +125,45 @@ std::vector<Guild> Guild::get_tracking_guilds(Course &course) {
 
 void Guild::update() {
     //Go through all verified users, load new tracked courses, and delete old ones.
+
+    std::cout << 1 << std::endl;
+
     std::vector<std::shared_ptr<TrackedCourse>> active_courses {};
     std::push_heap(tracked_courses.begin(), tracked_courses.end());
 
+    std::vector<long> to_add {};
+
+    std::cout << 2 << std::endl;
 
     for(const auto &user_id: verified_users) {
         User user {User::get_user(user_id)};
-        user.update();
+
+        std::cout << "User: " << user_id << std::endl;
 
         main:
         for(const auto &course: user.courses) {
+            std::cout << "Course: " << course << std::endl;
             for(const auto &tracked_course: tracked_courses) {
+                std::cout << "Tracked: " << tracked_course->course_id << std::endl;
                 if(tracked_course->course_id == course) {
+                    std::cout << "Erasing active course" << std::endl;
                     active_courses.erase(std::remove(active_courses.begin(), active_courses.end(),
                                                      tracked_course), active_courses.end());
                     goto main;
                 }
             }
-            add_tracked_course(course);
+            to_add.push_back(course);
         }
     }
 
-    for(const auto &course: active_courses) remove_tracked_course(course);
+    for(const auto &course: to_add) add_tracked_course(course);
+
+    std::cout << 3 << std::endl;
+
+//    for(const auto &course: active_courses) remove_tracked_course(course);
+
+
+    std::cout << 4 << std::endl;
 }
 
 void Guild::save() const {
@@ -165,14 +187,21 @@ void Guild::create_verified_role() {
 
         dpp::role role = std::get<dpp::role>(callback.value);
         this->verified_role_id = static_cast<long>(role.id);
+        save();
     });
 }
 
 void Guild::register_guild(long guild_id) {
     guild_map[guild_id] = std::make_unique<Guild>(guild_id);
+    guild_map[guild_id]->save();
 }
 
 Guild Guild::get_guild(long guild_id) {
+    std::cout << "Fetching!" << std::endl;
+    for (const auto &item: guild_map) {
+        std::cout << "Guild ID: " << item.first << std::endl;
+    }
+
     return *guild_map[guild_id];
 }
 
@@ -184,5 +213,17 @@ bool Guild::is_tracking(const Course &course) {
     }
 
     return false;
+}
+
+bool Guild::is_registered(long guild_id) {
+    if(guild_map.count(guild_id)) return true;
+
+    try {
+        DatabaseManager::fetch_guild_document(guild_id);
+    } catch(DocumentNotFoundException &ex) {
+        return false;
+    }
+
+    return true;
 }
 

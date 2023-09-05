@@ -1,7 +1,9 @@
 #include "include/DatabaseManager.h"
 #include "include/ConfigManager.h"
 #include "include/exceptions/DocumentNotFoundException.h"
+#include "include/Guild.h"
 #include <optional>
+#include <exception>
 
 using bsoncxx::builder::basic::kvp;
 using bsoncxx::builder::basic::make_array;
@@ -25,6 +27,20 @@ void DatabaseManager::init() {
     user_collection = database["users"];
     course_collection = database["courses"];
     guild_collection = database["guilds"];
+
+    load_guilds();
+}
+
+void DatabaseManager::load_guilds() {
+    mongocxx::cursor cursor = guild_collection.find(bsoncxx::document::view_or_value{});
+
+    for(auto&& doc : cursor) {
+        bsoncxx::document::value docValue{doc};
+
+        long id = docValue.find("_id")->get_int64();
+        Guild::guild_map[id] = std::make_unique<Guild>(docValue);
+    }
+
 }
 
 bsoncxx::document::value DatabaseManager::fetch_user_document(long id) {
@@ -122,7 +138,7 @@ void DatabaseManager::update_course(const Course &course) {
     auto update_doc = make_document(
             kvp("$set",
                 make_document(
-                        kvp("id_", static_cast<int64_t>(course.course_id)),
+                        kvp("_id", static_cast<int64_t>(course.course_id)),
                         kvp("name", course.name),
                         kvp("tracking_guilds", guilds_array_builder.view())
                 )
@@ -146,7 +162,7 @@ void DatabaseManager::insert_course(const Course &course) {
     auto create_doc = make_document(
             kvp("_id", bsoncxx::types::b_int64{course.course_id}),
             kvp("name", course.name),
-            kvp("courses", guilds_array_builder.view())
+            kvp("tracking_guilds", guilds_array_builder.view())
     );
 
     auto create = DatabaseManager::course_collection.insert_one(create_doc.view());
@@ -155,13 +171,24 @@ void DatabaseManager::insert_course(const Course &course) {
 }
 
 void DatabaseManager::update_guild(const Guild &guild) {
+    //TODO: Figure out how to get this to save properly.
+
+
+    std::cout << "x.1" << std::endl;
     bsoncxx::builder::basic::array users_array_builder;
-    for (const long &user : guild.verified_users) {
+    for(const long &user : guild.verified_users) {
         users_array_builder.append(bsoncxx::types::b_int64{user});
     }
 
+    std::cout << "x.2" << std::endl;
+
+
     bsoncxx::builder::basic::array courses_array_builder;
-    for (const std::shared_ptr<TrackedCourse> &tracked_course : guild.tracked_courses) {
+    for(const std::shared_ptr<TrackedCourse> &tracked_course : guild.tracked_courses) {
+
+        std::cout << "Course ID: " << tracked_course->course_id << std::endl;
+        std::cout << "x.25" << std::endl;
+
         bsoncxx::builder::basic::document course_doc_builder;
         course_doc_builder.append(kvp("course_id", static_cast<int64_t>(tracked_course->course_id)));
         course_doc_builder.append(kvp("category_id", static_cast<int64_t>(tracked_course->category_id)));
@@ -171,22 +198,31 @@ void DatabaseManager::update_guild(const Guild &guild) {
         courses_array_builder.append(course_doc_builder.extract());
     }
 
+    std::cout << "x.3" << std::endl;
+
     auto update_doc = make_document(
             kvp("$set",
                 make_document(
-                        kvp("id_", static_cast<int64_t>(guild.guild_id)),
+                        kvp("_id", static_cast<int64_t>(guild.guild_id)),
+                        kvp("verified_role_id", static_cast<int64_t>(guild.verified_role_id)),
                         kvp("verified_users", users_array_builder.view()),
                         kvp("tracked_courses", courses_array_builder.view())
                 )
             )
     );
 
+    std::cout << "x.4" << std::endl;
+
     auto update = DatabaseManager::guild_collection.update_one(
             make_document(kvp("_id", bsoncxx::types::b_int64{guild.guild_id})),
             update_doc.view());
 
+    std::cout << "x.5" << std::endl;
+
     assert(update);
     assert(update->modified_count() <= 1);
+
+    std::cout << "x.6" << std::endl;
 }
 
 void DatabaseManager::insert_guild(const Guild &guild) {
@@ -207,12 +243,13 @@ void DatabaseManager::insert_guild(const Guild &guild) {
     }
 
     auto create_doc =  make_document(
-            kvp("id_", static_cast<int64_t>(guild.guild_id)),
+            kvp("_id", static_cast<int64_t>(guild.guild_id)),
+            kvp("verified_role_id", static_cast<int64_t>(guild.verified_role_id)),
             kvp("verified_users", users_array_builder.view()),
             kvp("tracked_courses", courses_array_builder.view())
     );
 
-    auto create = DatabaseManager::course_collection.insert_one(create_doc.view());
+    auto create = DatabaseManager::guild_collection.insert_one(create_doc.view());
 
     assert(create);
 }

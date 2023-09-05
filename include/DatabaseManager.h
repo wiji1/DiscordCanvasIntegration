@@ -18,6 +18,8 @@ public:
     static mongocxx::collection guild_collection;
 
     static void init();
+    static void load_guilds();
+
     static bsoncxx::document::value fetch_user_document(long id);
     static bsoncxx::document::value fetch_course_document(long id);
     static bsoncxx::document::value fetch_guild_document(long id);
