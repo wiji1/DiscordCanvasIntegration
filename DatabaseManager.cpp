@@ -221,6 +221,7 @@ mongocxx::client DatabaseManager::client;
 mongocxx::database DatabaseManager::database;
 mongocxx::collection DatabaseManager::user_collection;
 mongocxx::collection DatabaseManager::course_collection;
+mongocxx::collection DatabaseManager::guild_collection;
 
 
 
