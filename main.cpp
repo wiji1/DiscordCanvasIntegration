@@ -27,6 +27,7 @@ int main() {
             bot->global_command_create(dpp::slashcommand("verify", "verification", bot->me.id));
             bot->global_command_create(dpp::slashcommand("test", "testing", bot->me.id));
             bot->global_command_create(dpp::slashcommand("setup", "testing", bot->me.id));
+            bot->global_command_create(dpp::slashcommand("cleanup", "testing", bot->me.id));
             bot->global_command_create(dpp::slashcommand("save", "testing", bot->me.id));
         }
     });
@@ -93,6 +94,18 @@ int main() {
 
             Guild guild {Guild::get_guild(guild_id)};
             guild.save();
+        }
+        if(event.command.get_command_name() == "cleanup") {
+            long guild_id = event.command.guild_id;
+            if(!Guild::is_registered(guild_id)) {
+                event.reply("Guild is not registered!");
+                return;
+            }
+
+            Guild guild {Guild::get_guild(guild_id)};
+            for (const auto &item: guild.tracked_courses) {
+                guild.remove_tracked_course(item);
+            }
         }
     });
 

@@ -63,6 +63,7 @@ void Guild::add_tracked_course(long course_id) {
     category.set_name(course.name);
 
     bot->channel_create(category, [&tracked_course, this](auto& callback) {
+        if(callback.is_error()) std::cout << "Error: " << callback.get_error().message << std::endl;
 
         dpp::channel category = std::get<dpp::channel>(callback.value);
         tracked_course->category_id = static_cast<long>(category.id);
@@ -74,7 +75,7 @@ void Guild::add_tracked_course(long course_id) {
         forums.set_name("Assignments");
 
         bot->channel_create(forums, [&tracked_course](auto& callback) {
-
+            if(callback.is_error()) std::cout << "Error: " << callback.get_error().message << std::endl;
             dpp::channel forums = std::get<dpp::channel>(callback.value);
             tracked_course->forums_channel = static_cast<long>(forums.id);
         });
@@ -86,6 +87,7 @@ void Guild::add_tracked_course(long course_id) {
         announcements.set_name("Announcements");
 
         bot->channel_create(announcements, [&tracked_course](auto& callback) {
+            if(callback.is_error()) std::cout << "Error: " << callback.get_error().message << std::endl;
             dpp::channel announcements = std::get<dpp::channel>(callback.value);
             tracked_course->announcements_channel = static_cast<long>(announcements.id);
         });
@@ -96,7 +98,7 @@ void Guild::add_tracked_course(long course_id) {
     course_role.set_name(course.name);
 
     bot->role_create(course_role, [&tracked_course](auto& callback) {
-        if(callback.is_error()) return;
+        if(callback.is_error()) std::cout << "Error: " << callback.get_error().message << std::endl;
 
         dpp::role role = std::get<dpp::role>(callback.value);
         tracked_course->role_id = static_cast<long>(role.id);
@@ -105,6 +107,7 @@ void Guild::add_tracked_course(long course_id) {
 
 void Guild::remove_tracked_course(const std::shared_ptr<TrackedCourse>& tracked_course) {
     bot->role_delete(guild_id, tracked_course->role_id);
+    bot->channel_delete(tracked_course->category_id);
     bot->channel_delete(tracked_course->forums_channel);
     bot->channel_delete(tracked_course->announcements_channel);
 
