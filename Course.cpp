@@ -65,7 +65,7 @@ void Course::update(const std::string &override_token) {
 
 User &Course::find_accessor() {
     for(const auto &guild_id: tracking_guilds) {
-        Guild guild {Guild::get_guild(guild_id)};
+        Guild guild = *Guild::get_guild(guild_id);
 
         std::shared_ptr<TrackedCourse> tracked_course_ptr {nullptr};
         for(const auto &item: guild.tracked_courses) {

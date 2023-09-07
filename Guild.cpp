@@ -3,11 +3,12 @@
 #include "include/DatabaseManager.h"
 #include "include/exceptions/DocumentNotFoundException.h"
 
-std::unordered_map<long, std::unique_ptr<Guild>> Guild::guild_map;
+std::unordered_map<long, std::shared_ptr<Guild>> Guild::guild_map;
 
 //TODO: Add a cleanup method to make testing easier (Delete roles and channels through remove_tracked_courses method)
 
 Guild::Guild(long guild_id) : guild_id {guild_id} {
+    std::cout << "Standard Constructor" << std::endl;
     try {
         const bsoncxx::document::value document {DatabaseManager::fetch_guild_document(guild_id)};
 
@@ -20,6 +21,7 @@ Guild::Guild(long guild_id) : guild_id {guild_id} {
 }
 
 Guild::Guild(bsoncxx::document::value document) {
+    std::cout << "Document Constructor" << std::endl;
     document_init(document);
 }
 
@@ -52,57 +54,95 @@ void Guild::document_init(const bsoncxx::document::value &document) {
 
 void Guild::add_tracked_course(long course_id) {
     Course course {Course::get_course(course_id)};
-    std::shared_ptr<TrackedCourse> tracked_course {tracked_courses.emplace_back()};
 
-    //TODO: Fix issue with only role and category channel being created and figure out how to properly save the guild.
-    // Saving is currently done through the /save command
+    std::shared_ptr<TrackedCourse> tracked_course = std::make_shared<TrackedCourse>();
+    tracked_course->course_id = course_id;
+
+    int completedCallbacks = 0;
+    std::condition_variable cv;
+    std::mutex mtx;
+
+    auto handleCallback = [&completedCallbacks, &cv, &tracked_course, &mtx, this](bool isError) {
+        std::unique_lock<std::mutex> lock(mtx);
+        if (isError) {
+            std::cout << "Error occurred in callback." << std::endl;
+        }
+
+        completedCallbacks++;
+        if(completedCallbacks == 4) {
+            tracked_courses.push_back(tracked_course);
+
+            cv.notify_all();
+        }
+    };
 
     dpp::channel category {};
     category.set_guild_id(guild_id);
     category.set_type(dpp::channel_type::CHANNEL_CATEGORY);
     category.set_name(course.name);
 
-    bot->channel_create(category, [&tracked_course, this](auto& callback) {
-        if(callback.is_error()) std::cout << "Error: " << callback.get_error().message << std::endl;
+    bot->channel_create(category, [&tracked_course, handleCallback](auto& callback) {
+        if (callback.is_error()) {
+            std::cout << "Error: " << callback.get_error().message << std::endl;
+        }
 
         dpp::channel category = std::get<dpp::channel>(callback.value);
         tracked_course->category_id = static_cast<long>(category.id);
 
-        dpp::channel forums {};
-        forums.set_guild_id(guild_id);
-        forums.set_type(dpp::channel_type::CHANNEL_FORUM);
-        forums.set_parent_id(category.id);
-        forums.set_name("Assignments");
+        handleCallback(callback.is_error());
+    });
 
-        bot->channel_create(forums, [&tracked_course](auto& callback) {
-            if(callback.is_error()) std::cout << "Error: " << callback.get_error().message << std::endl;
-            dpp::channel forums = std::get<dpp::channel>(callback.value);
-            tracked_course->forums_channel = static_cast<long>(forums.id);
-        });
+    dpp::channel forums {};
+    forums.set_guild_id(guild_id);
+    forums.set_type(dpp::channel_type::CHANNEL_FORUM);
+    forums.set_parent_id(category.id);
+    forums.set_name("Assignments");
 
-        dpp::channel announcements {};
-        announcements.set_guild_id(guild_id);
-        announcements.set_type(dpp::channel_type::CHANNEL_ANNOUNCEMENT);
-        announcements.set_parent_id(category.id);
-        announcements.set_name("Announcements");
+    bot->channel_create(forums, [&tracked_course, handleCallback](auto& callback) {
+        if (callback.is_error()) {
+            std::cout << "Error: " << callback.get_error().message << std::endl;
+        }
 
-        bot->channel_create(announcements, [&tracked_course](auto& callback) {
-            if(callback.is_error()) std::cout << "Error: " << callback.get_error().message << std::endl;
-            dpp::channel announcements = std::get<dpp::channel>(callback.value);
-            tracked_course->announcements_channel = static_cast<long>(announcements.id);
-        });
+        dpp::channel forums = std::get<dpp::channel>(callback.value);
+        tracked_course->forums_channel = static_cast<long>(forums.id);
+
+        handleCallback(callback.is_error());
+    });
+
+    dpp::channel announcements {};
+    announcements.set_guild_id(guild_id);
+    announcements.set_type(dpp::channel_type::CHANNEL_ANNOUNCEMENT);
+    announcements.set_parent_id(category.id);
+    announcements.set_name("Announcements");
+
+    bot->channel_create(announcements, [&tracked_course, handleCallback](auto& callback) {
+        if (callback.is_error()) {
+            std::cout << "Error: " << callback.get_error().message << std::endl;
+        }
+
+        dpp::channel announcements = std::get<dpp::channel>(callback.value);
+        tracked_course->announcements_channel = static_cast<long>(announcements.id);
+
+        handleCallback(callback.is_error());
     });
 
     dpp::role course_role;
     course_role.guild_id = guild_id;
     course_role.set_name(course.name);
 
-    bot->role_create(course_role, [&tracked_course](auto& callback) {
-        if(callback.is_error()) std::cout << "Error: " << callback.get_error().message << std::endl;
+    bot->role_create(course_role, [&tracked_course, handleCallback](auto& callback) {
+        if (callback.is_error()) {
+            std::cout << "Error: " << callback.get_error().message << std::endl;
+        }
 
         dpp::role role = std::get<dpp::role>(callback.value);
         tracked_course->role_id = static_cast<long>(role.id);
+
+        handleCallback(callback.is_error());
     });
+
+    std::unique_lock<std::mutex> lock(mtx);
+    cv.wait(lock, [&completedCallbacks]() { return completedCallbacks == 4; });
 }
 
 void Guild::remove_tracked_course(const std::shared_ptr<TrackedCourse>& tracked_course) {
@@ -199,13 +239,14 @@ void Guild::register_guild(long guild_id) {
     guild_map[guild_id]->save();
 }
 
-Guild Guild::get_guild(long guild_id) {
+std::shared_ptr<Guild> Guild::get_guild(long guild_id) {
     std::cout << "Fetching!" << std::endl;
     for (const auto &item: guild_map) {
         std::cout << "Guild ID: " << item.first << std::endl;
     }
 
-    return *guild_map[guild_id];
+    std::cout << "Pre-Pass Tracked Courses size: " << guild_map[guild_id]->tracked_courses.size() << std::endl;
+    return guild_map[guild_id];
 }
 
 bool Guild::is_tracking(const Course &course) {

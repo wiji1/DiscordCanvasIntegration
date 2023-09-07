@@ -92,7 +92,7 @@ int main() {
                 return;
             }
 
-            Guild guild {Guild::get_guild(guild_id)};
+            Guild guild  = *Guild::get_guild(guild_id);
             guild.save();
         }
         if(event.command.get_command_name() == "cleanup") {
@@ -102,10 +102,16 @@ int main() {
                 return;
             }
 
-            Guild guild {Guild::get_guild(guild_id)};
+            Guild guild = *Guild::get_guild(guild_id);
+            std::cout << "Tracked Courses size: " << guild.tracked_courses.size() << std::endl;
+
+
             for (const auto &item: guild.tracked_courses) {
+                std::cout << "Tracked Course ID: " << item->course_id << std::endl;
                 guild.remove_tracked_course(item);
             }
+
+            event.reply("Cleaning up!");
         }
     });
 
@@ -126,7 +132,7 @@ int main() {
 
 
         user.save();
-        Guild guild {Guild::get_guild(event.command.guild_id)};
+        Guild &guild = *Guild::get_guild(event.command.guild_id);
         guild.verified_users.push_back(user.discord_id);
         guild.update();
     });
