@@ -13,7 +13,7 @@ Course::Course(long course_id, const std::string &access_token) : course_id {cou
 }
 
 Course::Course(long course_id) : course_id {course_id} {
-    bsoncxx::document::value document{DatabaseManager::fetch_user_document(course_id)};
+    bsoncxx::document::value document{DatabaseManager::fetch_course_document(course_id)};
 
     name = document["name"].get_string().value.to_string();
 

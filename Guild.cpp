@@ -63,6 +63,8 @@ void Guild::add_tracked_course(long course_id) {
     std::condition_variable cv;
     std::mutex mtx;
 
+
+
     auto handleCallback = [&completedCallbacks, &cv, &tracked_course, &mtx, this](bool isError) {
         std::unique_lock<std::mutex> lock(mtx);
         if (isError) {
@@ -77,12 +79,16 @@ void Guild::add_tracked_course(long course_id) {
         }
     };
 
+    std::promise<long> categoryPromise;
+    std::future<long> categoryFuture = categoryPromise.get_future();
+
     dpp::channel category {};
     category.set_guild_id(guild_id);
     category.set_type(dpp::channel_type::CHANNEL_CATEGORY);
     category.set_name(course.name);
 
-    bot->channel_create(category, [&tracked_course, handleCallback](auto& callback) {
+
+    bot->channel_create(category, [&](auto& callback) {
         if (callback.is_error()) {
             std::cout << "Error: " << callback.get_error().message << std::endl;
         }
@@ -90,14 +96,19 @@ void Guild::add_tracked_course(long course_id) {
         dpp::channel category = std::get<dpp::channel>(callback.value);
         tracked_course->category_id = static_cast<long>(category.id);
 
+        categoryPromise.set_value(static_cast<long>(category.id));
         handleCallback(callback.is_error());
     });
+
+    long categoryId = categoryFuture.get();
 
     dpp::channel forums {};
     forums.set_guild_id(guild_id);
     forums.set_type(dpp::channel_type::CHANNEL_FORUM);
-    forums.set_parent_id(category.id);
+    forums.set_parent_id(categoryId);
     forums.set_name("Assignments");
+    forums.set_position(2);
+    forums.set_default_forum_layout(dpp::forum_layout_type::fl_list_view);
 
     bot->channel_create(forums, [&tracked_course, handleCallback](auto& callback) {
         if (callback.is_error()) {
@@ -112,9 +123,10 @@ void Guild::add_tracked_course(long course_id) {
 
     dpp::channel announcements {};
     announcements.set_guild_id(guild_id);
-    announcements.set_type(dpp::channel_type::CHANNEL_ANNOUNCEMENT);
-    announcements.set_parent_id(category.id);
+    announcements.set_type(dpp::channel_type::CHANNEL_TEXT);
+    announcements.set_parent_id(categoryId);
     announcements.set_name("Announcements");
+    forums.set_position(1);
 
     bot->channel_create(announcements, [&tracked_course, handleCallback](auto& callback) {
         if (callback.is_error()) {
@@ -152,10 +164,22 @@ void Guild::remove_tracked_course(const std::shared_ptr<TrackedCourse>& tracked_
     bot->channel_delete(tracked_course->forums_channel);
     bot->channel_delete(tracked_course->announcements_channel);
 
-    tracked_courses.erase(std::remove(tracked_courses.begin(), tracked_courses.end(),
-                                     tracked_course), tracked_courses.end());
+    for(int i {0}; i < tracked_courses.size(); i++) {
+        TrackedCourse &course = *tracked_courses[i];
+        if(course.course_id == tracked_course->course_id) {
+            std::cout << "Courses Size: " << tracked_courses.size() << std::endl;
+            tracked_courses.erase(tracked_courses.begin() + i);
+            std::cout << "Courses Size2: " << tracked_courses.size() << " " << this << std::endl;
+            break;
+        }
+    }
 
-//TODO: This is the issue, concurrent modification
+//    for(const auto &course: tracked_courses) {
+//        if(course->course_id == tracked_course->course_id)
+//    }
+//
+//    tracked_courses.erase(std::remove(tracked_courses.begin(), tracked_courses.end(),
+//                                     tracked_course), tracked_courses.end());
 }
 
 std::vector<Guild> Guild::get_tracking_guilds(Course &course) {
@@ -174,32 +198,36 @@ void Guild::update() {
 
     std::cout << 1 << std::endl;
 
-    std::vector<std::shared_ptr<TrackedCourse>> active_courses {};
-    std::push_heap(tracked_courses.begin(), tracked_courses.end());
-
     std::vector<long> to_add {};
 
     std::cout << 2 << std::endl;
+    std::vector<std::shared_ptr<TrackedCourse>> active_courses {tracked_courses};
 
-    for(const auto &user_id: verified_users) {
+    for(const auto &user_id : verified_users) {
         User user {User::get_user(user_id)};
 
-        std::cout << "User: " << user_id << std::endl;
+        for(const auto &course : user.courses) {
+            bool course_found = false;
 
-        main:
-        for(const auto &course: user.courses) {
-            std::cout << "Course: " << course << std::endl;
-            for(const auto &tracked_course: tracked_courses) {
-                std::cout << "Tracked: " << tracked_course->course_id << std::endl;
-                if(tracked_course->course_id == course) {
-                    std::cout << "Erasing active course" << std::endl;
-                    active_courses.erase(std::remove(active_courses.begin(), active_courses.end(),
-                                                     tracked_course), active_courses.end());
-                    goto main;
+            for(auto it = active_courses.begin(); it != active_courses.end();) {
+                const auto &tracked_course = *it;
+
+                if (tracked_course->course_id == course) {
+                    it = active_courses.erase(it);
+                    course_found = true;
+                } else {
+                    ++it;
                 }
             }
-            to_add.push_back(course);
+
+            if (!course_found) {
+                to_add.push_back(course);
+            }
         }
+    }
+
+    for (const auto &tracked_course : active_courses) {
+        remove_tracked_course(tracked_course);
     }
 
     for(const auto &course: to_add) add_tracked_course(course);

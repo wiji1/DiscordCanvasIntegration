@@ -39,6 +39,7 @@ void DatabaseManager::load_guilds() {
 
         long id = docValue.find("_id")->get_int64();
         Guild::guild_map[id] = std::make_unique<Guild>(docValue);
+        Guild::guild_map[id]->update();
     }
 
 }
@@ -174,7 +175,7 @@ void DatabaseManager::update_guild(const Guild &guild) {
     //TODO: Figure out how to get this to save properly.
 
 
-    std::cout << "x.1" << std::endl;
+    std::cout << "x.1" << " " << &guild << std::endl;
     bsoncxx::builder::basic::array users_array_builder;
     for(const long &user : guild.verified_users) {
         users_array_builder.append(bsoncxx::types::b_int64{user});

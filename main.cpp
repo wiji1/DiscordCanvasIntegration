@@ -14,11 +14,11 @@ std::unique_ptr<dpp::cluster> bot {nullptr};
 
 int main() {
     ConfigManager::init();
-    DatabaseManager::init();
 
     dpp::cluster bot_cluster(get_token());
     bot.reset(&bot_cluster);
 
+    DatabaseManager::init();
 
     bot->on_log(dpp::utility::cout_logger());
 
@@ -77,6 +77,12 @@ int main() {
 
         if(event.command.get_command_name() == "setup") {
             long guild_id = event.command.guild_id;
+
+            if(!event.command.get_guild().is_community()) {
+                event.reply("Community must be enabled!");
+                return;
+            }
+
             if(Guild::is_registered(guild_id)) {
                 event.reply("This guild is already registered!");
                 return;
@@ -92,7 +98,7 @@ int main() {
                 return;
             }
 
-            Guild guild  = *Guild::get_guild(guild_id);
+            Guild &guild = *Guild::get_guild(guild_id);
             guild.save();
         }
         if(event.command.get_command_name() == "cleanup") {
@@ -102,7 +108,7 @@ int main() {
                 return;
             }
 
-            Guild guild = *Guild::get_guild(guild_id);
+            Guild &guild = *Guild::get_guild(guild_id);
             std::cout << "Tracked Courses size: " << guild.tracked_courses.size() << std::endl;
 
 
