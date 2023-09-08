@@ -63,8 +63,6 @@ void Guild::add_tracked_course(long course_id) {
     std::condition_variable cv;
     std::mutex mtx;
 
-
-
     auto handleCallback = [&completedCallbacks, &cv, &tracked_course, &mtx, this](bool isError) {
         std::unique_lock<std::mutex> lock(mtx);
         if (isError) {
@@ -88,7 +86,7 @@ void Guild::add_tracked_course(long course_id) {
     category.set_name(course.name);
 
 
-    bot->channel_create(category, [&](auto& callback) {
+    bot->channel_create(category, [&](auto &callback) {
         if (callback.is_error()) {
             std::cout << "Error: " << callback.get_error().message << std::endl;
         }
@@ -102,33 +100,15 @@ void Guild::add_tracked_course(long course_id) {
 
     long categoryId = categoryFuture.get();
 
-    dpp::channel forums {};
-    forums.set_guild_id(guild_id);
-    forums.set_type(dpp::channel_type::CHANNEL_FORUM);
-    forums.set_parent_id(categoryId);
-    forums.set_name("Assignments");
-    forums.set_position(2);
-    forums.set_default_forum_layout(dpp::forum_layout_type::fl_list_view);
-
-    bot->channel_create(forums, [&tracked_course, handleCallback](auto& callback) {
-        if (callback.is_error()) {
-            std::cout << "Error: " << callback.get_error().message << std::endl;
-        }
-
-        dpp::channel forums = std::get<dpp::channel>(callback.value);
-        tracked_course->forums_channel = static_cast<long>(forums.id);
-
-        handleCallback(callback.is_error());
-    });
 
     dpp::channel announcements {};
     announcements.set_guild_id(guild_id);
     announcements.set_type(dpp::channel_type::CHANNEL_TEXT);
     announcements.set_parent_id(categoryId);
     announcements.set_name("Announcements");
-    forums.set_position(1);
+    announcements.set_position(1);
 
-    bot->channel_create(announcements, [&tracked_course, handleCallback](auto& callback) {
+    bot->channel_create(announcements, [&](auto &callback) {
         if (callback.is_error()) {
             std::cout << "Error: " << callback.get_error().message << std::endl;
         }
@@ -137,13 +117,32 @@ void Guild::add_tracked_course(long course_id) {
         tracked_course->announcements_channel = static_cast<long>(announcements.id);
 
         handleCallback(callback.is_error());
+
+        dpp::channel forums {};
+        forums.set_guild_id(guild_id);
+        forums.set_type(dpp::channel_type::CHANNEL_FORUM);
+        forums.set_parent_id(categoryId);
+        forums.set_name("Assignments");
+        forums.set_position(1);
+        forums.set_default_forum_layout(dpp::forum_layout_type::fl_list_view);
+
+        bot->channel_create(forums, [&](auto &callback) {
+            if (callback.is_error()) {
+                std::cout << "Error: " << callback.get_error().message << std::endl;
+            }
+
+            dpp::channel forums = std::get<dpp::channel>(callback.value);
+            tracked_course->forums_channel = static_cast<long>(forums.id);
+
+            handleCallback(callback.is_error());
+        });
     });
 
     dpp::role course_role;
     course_role.guild_id = guild_id;
     course_role.set_name(course.name);
 
-    bot->role_create(course_role, [&tracked_course, handleCallback](auto& callback) {
+    bot->role_create(course_role, [&tracked_course, handleCallback](auto &callback) {
         if (callback.is_error()) {
             std::cout << "Error: " << callback.get_error().message << std::endl;
         }
@@ -194,19 +193,23 @@ std::vector<Guild> Guild::get_tracking_guilds(Course &course) {
 }
 
 void Guild::update() {
-    //Go through all verified users, load new tracked courses, and delete old ones.
-
-    std::cout << 1 << std::endl;
-
     std::vector<long> to_add {};
 
-    std::cout << 2 << std::endl;
     std::vector<std::shared_ptr<TrackedCourse>> active_courses {tracked_courses};
+    std::vector<long> active_users {verified_users};
 
-    for(const auto &user_id : verified_users) {
-        User user {User::get_user(user_id)};
+    for(const auto &user_id : active_users) {
+        std::unique_ptr<User> user {nullptr};
 
-        for(const auto &course : user.courses) {
+        try {
+            user = std::make_unique<User>(User::get_user(user_id));
+        } catch (const DocumentNotFoundException &ex) {
+            verified_users.erase(std::remove(verified_users.begin(), verified_users.end(), user_id), verified_users.end());
+
+            continue;
+        }
+
+        for(const auto &course : user->courses) {
             bool course_found = false;
 
             for(auto it = active_courses.begin(); it != active_courses.end();) {
@@ -232,12 +235,7 @@ void Guild::update() {
 
     for(const auto &course: to_add) add_tracked_course(course);
 
-    std::cout << 3 << std::endl;
-
-//    for(const auto &course: active_courses) remove_tracked_course(course);
-
-
-    std::cout << 4 << std::endl;
+    save();
 }
 
 void Guild::save() const {

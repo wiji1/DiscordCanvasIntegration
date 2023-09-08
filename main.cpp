@@ -119,6 +119,7 @@ int main() {
                 guild.remove_tracked_course(item);
             }
 
+            guild.save();
             event.reply("Cleaning up!");
         }
     });
