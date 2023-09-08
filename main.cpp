@@ -35,10 +35,10 @@ int main() {
     bot->on_slashcommand([](const dpp::slashcommand_t & event) {
         if(event.command.get_command_name() == "verify") {
 
-            std::unique_ptr<User> user {nullptr};
+            std::shared_ptr<User> user {nullptr};
 
             try {
-                user = std::make_unique<User>(User::get_user(event.command.usr.id));
+                user.swap(User::get_user(event.command.usr.id));
             } catch (const DocumentNotFoundException &ex) {
                 dpp::interaction_modal_response modal("verification-form", "We need the following information from you");
                 modal.add_component(
@@ -73,7 +73,7 @@ int main() {
         if(event.command.get_command_name() == "test") {
 
             try {
-                User user {User::get_user(static_cast<long>(event.command.get_issuing_user().id))};
+                User &user {*User::get_user(static_cast<long>(event.command.get_issuing_user().id))};
                 event.reply(std::string("Hi"));
 
                 user.update();

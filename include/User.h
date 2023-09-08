@@ -7,7 +7,7 @@
 
     class User {
     private:
-        static std::unordered_map<long, std::unique_ptr<User>> user_map;
+        static std::unordered_map<long, std::shared_ptr<User>> user_map;
     public:
         long discord_id;
         std::string user_token;
@@ -16,8 +16,8 @@
 
         std::vector<long> courses;
 
-        static User &create_user(std::string user_token, long discord_id);
-        static User &get_user(long discord_id);
+        static std::shared_ptr<User> &create_user(std::string user_token, long discord_id);
+        static std::shared_ptr<User> &get_user(long discord_id);
 
         void update();
         void save() const;

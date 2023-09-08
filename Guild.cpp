@@ -220,10 +220,10 @@ void Guild::update() {
     std::vector<long> active_users {verified_users};
 
     for(const auto &user_id : active_users) {
-        std::unique_ptr<User> user {nullptr};
+        std::shared_ptr<User> user {nullptr};
 
         try {
-            user = std::make_unique<User>(User::get_user(user_id));
+            user.swap(User::get_user(user_id));
         } catch (const DocumentNotFoundException &ex) {
             verified_users.erase(std::remove(verified_users.begin(), verified_users.end(), user_id), verified_users.end());
 

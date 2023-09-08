@@ -90,7 +90,7 @@ User &Course::find_accessor() {
             );
 
             if (count > 0) {
-                return User::get_user(static_cast<long>(member.first));
+                return *User::get_user(static_cast<long>(member.first));
             }
         }
 

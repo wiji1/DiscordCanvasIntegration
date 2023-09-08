@@ -92,19 +92,19 @@ void User::update() {
     }
 }
 
-User &User::create_user(std::string user_token, long discord_id) {
+std::shared_ptr<User> &User::create_user(std::string user_token, long discord_id) {
     user_map[discord_id] = std::make_unique<User>(std::move(user_token), discord_id);
-    return *user_map[discord_id];
+    return user_map[discord_id];
 }
 
-User &User::get_user(long discord_id) {
-    if(user_map.count(discord_id)) return *user_map[discord_id];
+std::shared_ptr<User> &User::get_user(long discord_id) {
+    if(user_map.count(discord_id)) return user_map[discord_id];
 
     DatabaseManager::fetch_user_document(discord_id);
     // Used to throw Exception if User is not in the database
 
     user_map[discord_id] = std::make_unique<User>(discord_id);
-    return *user_map[discord_id];
+    return user_map[discord_id];
 }
 
 
