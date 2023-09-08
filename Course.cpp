@@ -6,7 +6,7 @@
 #include "include/Guild.h"
 #include <vector>
 
-std::unordered_map<long, std::unique_ptr<Course>> Course::course_map;
+std::unordered_map<long, std::shared_ptr<Course>> Course::course_map;
 
 Course::Course(long course_id, const std::string &access_token) : course_id {course_id} {
     update(access_token);
@@ -104,23 +104,23 @@ User &Course::find_accessor() {
 }
 
 
-Course &Course::get_or_create(long course_id, const std::string &access_token) {
+std::shared_ptr<Course> &Course::get_or_create(long course_id, const std::string &access_token) {
     try {
         return get_course(course_id);
     } catch(DocumentNotFoundException &ignored) { }
 
     course_map[course_id] = std::make_unique<Course>(course_id, access_token);
     course_map[course_id]->save();
-    return *course_map[course_id];
+    return course_map[course_id];
 }
 
-Course &Course::get_course(long course_id) {
-    if(course_map.count(course_id)) return *course_map[course_id];
+std::shared_ptr<Course> &Course::get_course(long course_id) {
+    if(course_map.count(course_id)) return course_map[course_id];
 
     DatabaseManager::fetch_course_document(course_id);
     // Used to throw Exception if Course is not in the database
 
     course_map[course_id] = std::make_unique<Course>(course_id);
-    return *course_map[course_id];
+    return course_map[course_id];
 }
 

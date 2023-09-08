@@ -27,7 +27,7 @@ public:
     bool is_tracking(const Course &course);
 
     static void register_guild(long guild_id);
-    static std::shared_ptr<Guild> get_guild(long guild_id);
+    static std::shared_ptr<Guild> &get_guild(long guild_id);
 
 
     void update();

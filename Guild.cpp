@@ -54,7 +54,7 @@ void Guild::add_tracked_course(long course_id) {
     //TODO: Add startup channel/role existence verification. Properly remove tracked course/guild when not found
     //TODO: Implement course updating (When tracked course is removed, update inside the course object)
 
-    Course course {Course::get_course(course_id)};
+    Course &course {*Course::get_course(course_id)};
 
     std::shared_ptr<TrackedCourse> tracked_course = std::make_shared<TrackedCourse>();
     tracked_course->course_id = course_id;
@@ -289,7 +289,7 @@ void Guild::register_guild(long guild_id) {
     guild_map[guild_id]->save();
 }
 
-std::shared_ptr<Guild> Guild::get_guild(long guild_id) {
+std::shared_ptr<Guild> &Guild::get_guild(long guild_id) {
     return guild_map[guild_id];
 }
 
