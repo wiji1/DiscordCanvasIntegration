@@ -24,14 +24,15 @@ public:
     static bsoncxx::document::value fetch_course_document(long id);
     static bsoncxx::document::value fetch_guild_document(long id);
 
-    static void update_user(const User& user);
-    static void insert_user(const User& user);
+    static void update_user(const User &user);
+    static void insert_user(const User &user);
 
-    static void update_course(const Course& course);
-    static void insert_course(const Course& course);
+    static void update_course(const Course &course);
+    static void insert_course(const Course &course);
 
-    static void update_guild(const Guild& guild);
-    static void insert_guild(const Guild& guild);
+    static void update_guild(const Guild &guild);
+    static void insert_guild(const Guild &guild);
+    static void delete_guild(const Guild &guild);
 
 };
 

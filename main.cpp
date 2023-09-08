@@ -105,15 +105,13 @@ int main() {
 
             Guild &guild = *Guild::get_guild(guild_id);
 
-            std::vector<std::shared_ptr<TrackedCourse>> tracked_courses {guild.tracked_courses};
+//            std::vector<std::shared_ptr<TrackedCourse>> tracked_courses {guild.tracked_courses};
+//
+//            for(const auto &item: tracked_courses) {
+//                guild.remove_tracked_course(item);
+//            }
 
-            for(const auto &item: tracked_courses) {
-                guild.remove_tracked_course(item);
-            }
-
-            bot->role_delete(guild_id, guild.verified_role_id);
-
-            guild.save();
+            guild.deregister();
             event.reply("Cleaning up!");
         }
     });

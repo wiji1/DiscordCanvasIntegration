@@ -52,8 +52,7 @@ void Guild::document_init(const bsoncxx::document::value &document) {
 
 void Guild::add_tracked_course(long course_id) {
 
-    //TODO: Find out what's rate limiting me in here. Also add in rate limit handling
-    //TODO: Clean up print outs
+    //TODO: Find out what's rate limiting me in here. Also add in rate limit handling (Discord role creation API, investigate)
     //TODO: Add startup channel/role existence verification. Properly remove tracked course/guild when not found
     //TODO: Implement course updating
 
@@ -294,6 +293,19 @@ void Guild::register_guild(long guild_id) {
 
 std::shared_ptr<Guild> Guild::get_guild(long guild_id) {
     return guild_map[guild_id];
+}
+
+void Guild::deregister() {
+    for(const auto &course: tracked_courses) {
+        remove_tracked_course(course);
+    }
+
+    bot->role_delete(guild_id, verified_role_id);
+
+    DatabaseManager::delete_guild(*this);
+
+    //TODO: Get this working
+//    guild_map.erase(guild_map.begin(), guild_map.end(), this);
 }
 
 bool Guild::is_tracking(const Course &course) {

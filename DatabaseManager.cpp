@@ -237,6 +237,10 @@ void DatabaseManager::insert_guild(const Guild &guild) {
     assert(create);
 }
 
+void DatabaseManager::delete_guild(const Guild &guild) {
+    DatabaseManager::guild_collection.delete_one(make_document(kvp("_id", bsoncxx::types::b_int64{guild.guild_id})));
+}
+
 mongocxx::client DatabaseManager::client;
 mongocxx::database DatabaseManager::database;
 mongocxx::collection DatabaseManager::user_collection;
