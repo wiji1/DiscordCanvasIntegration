@@ -296,7 +296,8 @@ std::shared_ptr<Guild> Guild::get_guild(long guild_id) {
 }
 
 void Guild::deregister() {
-    for(const auto &course: tracked_courses) {
+    auto active_courses {tracked_courses};
+    for(const auto &course: active_courses) {
         remove_tracked_course(course);
     }
 
@@ -304,8 +305,14 @@ void Guild::deregister() {
 
     DatabaseManager::delete_guild(*this);
 
-    //TODO: Get this working
-//    guild_map.erase(guild_map.begin(), guild_map.end(), this);
+    for(auto it = guild_map.begin(); it != guild_map.end();) {
+        if (it->second.get() == this) {
+            guild_map.erase(it);
+            break;
+        } else {
+            ++it;
+        }
+    }
 }
 
 bool Guild::is_tracking(const Course &course) {
