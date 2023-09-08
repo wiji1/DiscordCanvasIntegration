@@ -63,7 +63,7 @@ void Guild::add_tracked_course(long course_id) {
     std::condition_variable cv;
     std::mutex mtx;
 
-    auto handleCallback = [&completedCallbacks, &cv, &tracked_course, &mtx, this](bool isError) {
+    auto handle_callback = [&completedCallbacks, &cv, &tracked_course, &mtx, this](bool isError) {
         std::unique_lock<std::mutex> lock(mtx);
         if (isError) {
             std::cout << "Error occurred in callback." << std::endl;
@@ -77,13 +77,46 @@ void Guild::add_tracked_course(long course_id) {
         }
     };
 
-    std::promise<long> categoryPromise;
-    std::future<long> categoryFuture = categoryPromise.get_future();
+    std::promise<dpp::role> role_promise;
+    std::future<dpp::role> role_future = role_promise.get_future();
+
+    dpp::role course_role;
+    course_role.guild_id = guild_id;
+    course_role.set_name(course.name);
+
+    bot->role_create(course_role, [&](auto &callback) {
+        if (callback.is_error()) {
+            std::cout << "Error: " << callback.get_error().message << std::endl;
+        }
+
+        dpp::role role = std::get<dpp::role>(callback.value);
+        tracked_course->role_id = static_cast<long>(role.id);
+
+        role_promise.set_value(role);
+        handle_callback(callback.is_error());
+    });
+
+    dpp::role role = role_future.get();
+
+    std::promise<long> category_promise;
+    std::future<long> category_future = category_promise.get_future();
 
     dpp::channel category {};
     category.set_guild_id(guild_id);
     category.set_type(dpp::channel_type::CHANNEL_CATEGORY);
     category.set_name(course.name);
+
+    dpp::permission category_allow {};
+    dpp::permission category_deny {};
+
+    category_allow.set(dpp::p_view_channel);
+    category.add_permission_overwrite(role.id, dpp::overwrite_type::ot_role, category_allow, category_deny);
+
+    category_allow.set();
+    category_deny.set(dpp::p_view_channel);
+
+    category.add_permission_overwrite(guild_id, dpp::overwrite_type::ot_role, category_allow, category_deny);
+
 
 
     bot->channel_create(category, [&](auto &callback) {
@@ -94,12 +127,11 @@ void Guild::add_tracked_course(long course_id) {
         dpp::channel category = std::get<dpp::channel>(callback.value);
         tracked_course->category_id = static_cast<long>(category.id);
 
-        categoryPromise.set_value(static_cast<long>(category.id));
-        handleCallback(callback.is_error());
+        category_promise.set_value(static_cast<long>(category.id));
+        handle_callback(callback.is_error());
     });
 
-    long categoryId = categoryFuture.get();
-
+    long categoryId = category_future.get();
 
     dpp::channel announcements {};
     announcements.set_guild_id(guild_id);
@@ -107,6 +139,12 @@ void Guild::add_tracked_course(long course_id) {
     announcements.set_parent_id(categoryId);
     announcements.set_name("Announcements");
     announcements.set_position(1);
+
+    dpp::permission announcements_allow {};
+    dpp::permission announcements_deny {};
+
+    announcements_deny.set(dpp::p_send_messages);
+    announcements.add_permission_overwrite(role.id, dpp::overwrite_type::ot_role, announcements_allow, announcements_deny);
 
     bot->channel_create(announcements, [&](auto &callback) {
         if (callback.is_error()) {
@@ -116,7 +154,7 @@ void Guild::add_tracked_course(long course_id) {
         dpp::channel announcements = std::get<dpp::channel>(callback.value);
         tracked_course->announcements_channel = static_cast<long>(announcements.id);
 
-        handleCallback(callback.is_error());
+        handle_callback(callback.is_error());
 
         dpp::channel forums {};
         forums.set_guild_id(guild_id);
@@ -126,6 +164,13 @@ void Guild::add_tracked_course(long course_id) {
         forums.set_position(1);
         forums.set_default_forum_layout(dpp::forum_layout_type::fl_list_view);
 
+        dpp::permission forums_allow {};
+        dpp::permission forums_deny {};
+
+        forums_allow.set(dpp::p_send_messages_in_threads);
+        forums_deny.set(dpp::p_manage_threads, dpp::p_create_public_threads, dpp::p_create_private_threads);
+        forums.add_permission_overwrite(role.id, dpp::overwrite_type::ot_role, forums_allow, forums_deny);
+
         bot->channel_create(forums, [&](auto &callback) {
             if (callback.is_error()) {
                 std::cout << "Error: " << callback.get_error().message << std::endl;
@@ -134,23 +179,8 @@ void Guild::add_tracked_course(long course_id) {
             dpp::channel forums = std::get<dpp::channel>(callback.value);
             tracked_course->forums_channel = static_cast<long>(forums.id);
 
-            handleCallback(callback.is_error());
+            handle_callback(callback.is_error());
         });
-    });
-
-    dpp::role course_role;
-    course_role.guild_id = guild_id;
-    course_role.set_name(course.name);
-
-    bot->role_create(course_role, [&tracked_course, handleCallback](auto &callback) {
-        if (callback.is_error()) {
-            std::cout << "Error: " << callback.get_error().message << std::endl;
-        }
-
-        dpp::role role = std::get<dpp::role>(callback.value);
-        tracked_course->role_id = static_cast<long>(role.id);
-
-        handleCallback(callback.is_error());
     });
 
     std::unique_lock<std::mutex> lock(mtx);
@@ -172,13 +202,6 @@ void Guild::remove_tracked_course(const std::shared_ptr<TrackedCourse>& tracked_
             break;
         }
     }
-
-//    for(const auto &course: tracked_courses) {
-//        if(course->course_id == tracked_course->course_id)
-//    }
-//
-//    tracked_courses.erase(std::remove(tracked_courses.begin(), tracked_courses.end(),
-//                                     tracked_course), tracked_courses.end());
 }
 
 std::vector<Guild> Guild::get_tracking_guilds(Course &course) {
