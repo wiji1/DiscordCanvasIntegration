@@ -5,8 +5,6 @@
 
 std::unordered_map<long, std::shared_ptr<Guild>> Guild::guild_map;
 
-//TODO: Add a cleanup method to make testing easier (Delete roles and channels through remove_tracked_courses method)
-
 Guild::Guild(long guild_id) : guild_id {guild_id} {
     std::cout << "Standard Constructor" << std::endl;
     try {
@@ -53,6 +51,9 @@ void Guild::document_init(const bsoncxx::document::value &document) {
 }
 
 void Guild::add_tracked_course(long course_id) {
+
+    //TODO: Find out what's rate limiting me in here.
+
     Course course {Course::get_course(course_id)};
 
     std::shared_ptr<TrackedCourse> tracked_course = std::make_shared<TrackedCourse>();
