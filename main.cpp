@@ -106,8 +106,10 @@ int main() {
             std::cout << "Tracked Courses size: " << guild.tracked_courses.size() << std::endl;
 
 
-            for (const auto &item: guild.tracked_courses) {
-                std::cout << "Tracked Course ID: " << item->course_id << std::endl;
+            std::vector<std::shared_ptr<TrackedCourse>> tracked_courses {guild.tracked_courses};
+
+            for (const auto &item: tracked_courses) {
+                std::cout << item << " " << "Tracked Course ID: " << item->course_id << std::endl;
                 guild.remove_tracked_course(item);
             }
 

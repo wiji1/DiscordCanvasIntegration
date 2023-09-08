@@ -56,6 +56,7 @@ void Guild::add_tracked_course(long course_id) {
     Course course {Course::get_course(course_id)};
 
     std::shared_ptr<TrackedCourse> tracked_course = std::make_shared<TrackedCourse>();
+    std::cout << "Pre Course ID: " << course_id << &(*tracked_course) << std::endl;
     tracked_course->course_id = course_id;
 
     int completedCallbacks = 0;
@@ -153,6 +154,8 @@ void Guild::remove_tracked_course(const std::shared_ptr<TrackedCourse>& tracked_
 
     tracked_courses.erase(std::remove(tracked_courses.begin(), tracked_courses.end(),
                                      tracked_course), tracked_courses.end());
+
+//TODO: This is the issue, concurrent modification
 }
 
 std::vector<Guild> Guild::get_tracking_guilds(Course &course) {
