@@ -33,30 +33,41 @@ int main() {
     });
 
     bot->on_slashcommand([](const dpp::slashcommand_t & event) {
-        if (event.command.get_command_name() == "verify") {
-            dpp::interaction_modal_response modal("verification-form", "We need the following information from you");
-            modal.add_component(
-                    dpp::component().
-                            set_label("Canvas Access Token").
-                            set_id("access-token").
-                            set_type(dpp::cot_text).
-                            set_placeholder("Don't know how? Visit https://youtube.com/kys").
-                            set_min_length(5).
-                            set_max_length(100).
-                            set_text_style(dpp::text_short)
-            );
-            modal.add_row();
-            modal.add_component(
-                    dpp::component().
-                            set_label("Type rammel").
-                            set_id("field_id2").
-                            set_type(dpp::cot_text).
-                            set_placeholder("gumf").
-                            set_min_length(1).
-                            set_max_length(2000).
-                            set_text_style(dpp::text_paragraph)
-            );
-            event.dialog(modal);
+        if(event.command.get_command_name() == "verify") {
+
+            std::unique_ptr<User> user {nullptr};
+
+            try {
+                user = std::make_unique<User>(User::get_user(event.command.usr.id));
+            } catch (const DocumentNotFoundException &ex) {
+                dpp::interaction_modal_response modal("verification-form", "We need the following information from you");
+                modal.add_component(
+                        dpp::component().
+                                set_label("Canvas Access Token").
+                                set_id("access-token").
+                                set_type(dpp::cot_text).
+                                set_placeholder("Don't know how? Visit https://youtube.com/kys").
+                                set_min_length(5).
+                                set_max_length(100).
+                                set_text_style(dpp::text_short)
+                );
+                modal.add_row();
+                modal.add_component(
+                        dpp::component().
+                                set_label("Type rammel").
+                                set_id("field_id2").
+                                set_type(dpp::cot_text).
+                                set_placeholder("gumf").
+                                set_min_length(1).
+                                set_max_length(2000).
+                                set_text_style(dpp::text_paragraph)
+                );
+                event.dialog(modal);
+            }
+
+            Guild &guild {*Guild::get_guild(event.command.guild_id)};
+            guild.verified_users.push_back(user->discord_id);
+            guild.update();
         }
 
         if(event.command.get_command_name() == "test") {
@@ -104,12 +115,6 @@ int main() {
             }
 
             Guild &guild = *Guild::get_guild(guild_id);
-
-//            std::vector<std::shared_ptr<TrackedCourse>> tracked_courses {guild.tracked_courses};
-//
-//            for(const auto &item: tracked_courses) {
-//                guild.remove_tracked_course(item);
-//            }
 
             guild.deregister();
             event.reply("Cleaning up!");

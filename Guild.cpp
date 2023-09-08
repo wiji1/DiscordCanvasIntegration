@@ -6,7 +6,6 @@
 std::unordered_map<long, std::shared_ptr<Guild>> Guild::guild_map;
 
 Guild::Guild(long guild_id) : guild_id {guild_id} {
-    std::cout << "Standard Constructor" << std::endl;
     try {
         const bsoncxx::document::value document {DatabaseManager::fetch_guild_document(guild_id)};
 
@@ -19,7 +18,6 @@ Guild::Guild(long guild_id) : guild_id {guild_id} {
 }
 
 Guild::Guild(bsoncxx::document::value document) {
-    std::cout << "Document Constructor" << std::endl;
     document_init(document);
 }
 
@@ -54,7 +52,7 @@ void Guild::add_tracked_course(long course_id) {
 
     //TODO: Find out what's rate limiting me in here. Also add in rate limit handling (Discord role creation API, investigate)
     //TODO: Add startup channel/role existence verification. Properly remove tracked course/guild when not found
-    //TODO: Implement course updating
+    //TODO: Implement course updating (When tracked course is removed, update inside the course object)
 
     Course course {Course::get_course(course_id)};
 
@@ -170,7 +168,7 @@ void Guild::add_tracked_course(long course_id) {
         dpp::permission forums_deny {};
 
         forums_allow.set(dpp::p_send_messages_in_threads);
-        forums_deny.set(dpp::p_manage_threads, dpp::p_create_public_threads, dpp::p_create_private_threads);
+        forums_deny.set(dpp::p_manage_threads, dpp::p_create_public_threads, dpp::p_create_private_threads, dpp::p_send_messages);
         forums.add_permission_overwrite(role.id, dpp::overwrite_type::ot_role, forums_allow, forums_deny);
 
         bot->channel_create(forums, [&](auto &callback) {
