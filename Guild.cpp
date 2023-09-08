@@ -52,7 +52,10 @@ void Guild::document_init(const bsoncxx::document::value &document) {
 
 void Guild::add_tracked_course(long course_id) {
 
-    //TODO: Find out what's rate limiting me in here.
+    //TODO: Find out what's rate limiting me in here. Also add in rate limit handling
+    //TODO: Clean up print outs
+    //TODO: Add startup channel/role existence verification. Properly remove tracked course/guild when not found
+    //TODO: Implement course updating
 
     Course course {Course::get_course(course_id)};
 

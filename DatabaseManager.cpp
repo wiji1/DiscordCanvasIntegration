@@ -172,9 +172,6 @@ void DatabaseManager::insert_course(const Course &course) {
 }
 
 void DatabaseManager::update_guild(const Guild &guild) {
-    //TODO: Figure out how to get this to save properly.
-
-
     std::cout << "x.1" << " " << &guild << std::endl;
     bsoncxx::builder::basic::array users_array_builder;
     for(const long &user : guild.verified_users) {

@@ -114,10 +114,12 @@ int main() {
 
             std::vector<std::shared_ptr<TrackedCourse>> tracked_courses {guild.tracked_courses};
 
-            for (const auto &item: tracked_courses) {
+            for(const auto &item: tracked_courses) {
                 std::cout << item << " " << "Tracked Course ID: " << item->course_id << std::endl;
                 guild.remove_tracked_course(item);
             }
+
+            bot->role_delete(guild_id, guild.verified_role_id);
 
             guild.save();
             event.reply("Cleaning up!");
