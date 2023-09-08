@@ -6,7 +6,7 @@
 #include <sstream>
 #include <utility>
 
-std::unordered_map<long, std::unique_ptr<User>> User::user_map;
+std::unordered_map<long, std::shared_ptr<User>> User::user_map;
 
 User::User(std::string user_token, long discord_id) :
     discord_id {discord_id}, user_token {std::move(user_token)} {

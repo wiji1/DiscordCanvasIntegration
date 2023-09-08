@@ -134,7 +134,7 @@ int main() {
         m.set_content("You entered: " + v).set_flags(dpp::m_ephemeral);
         event.reply(m);
 
-        User user {User::create_user(v, static_cast<long>(event.command.get_issuing_user().id))};
+        User &user {*User::create_user(v, static_cast<long>(event.command.get_issuing_user().id))};
 
 
         user.save();

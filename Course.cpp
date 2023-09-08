@@ -100,7 +100,7 @@ User &Course::find_accessor() {
 
         }
     }
-    return User::get_user(0);
+    return *User::get_user(0);
 }
 
 
