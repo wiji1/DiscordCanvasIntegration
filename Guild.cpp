@@ -60,7 +60,6 @@ void Guild::add_tracked_course(long course_id) {
     Course course {Course::get_course(course_id)};
 
     std::shared_ptr<TrackedCourse> tracked_course = std::make_shared<TrackedCourse>();
-    std::cout << "Pre Course ID: " << course_id << &(*tracked_course) << std::endl;
     tracked_course->course_id = course_id;
 
     int completedCallbacks = 0;
@@ -200,9 +199,7 @@ void Guild::remove_tracked_course(const std::shared_ptr<TrackedCourse>& tracked_
     for(int i {0}; i < tracked_courses.size(); i++) {
         TrackedCourse &course = *tracked_courses[i];
         if(course.course_id == tracked_course->course_id) {
-            std::cout << "Courses Size: " << tracked_courses.size() << std::endl;
             tracked_courses.erase(tracked_courses.begin() + i);
-            std::cout << "Courses Size2: " << tracked_courses.size() << " " << this << std::endl;
             break;
         }
     }
@@ -296,12 +293,6 @@ void Guild::register_guild(long guild_id) {
 }
 
 std::shared_ptr<Guild> Guild::get_guild(long guild_id) {
-    std::cout << "Fetching!" << std::endl;
-    for (const auto &item: guild_map) {
-        std::cout << "Guild ID: " << item.first << std::endl;
-    }
-
-    std::cout << "Pre-Pass Tracked Courses size: " << guild_map[guild_id]->tracked_courses.size() << std::endl;
     return guild_map[guild_id];
 }
 

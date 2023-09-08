@@ -63,12 +63,7 @@ int main() {
 
             try {
                 User user {User::get_user(static_cast<long>(event.command.get_issuing_user().id))};
-//            User user {static_cast<long>(event.command.get_issuing_user().id)};
                 event.reply(std::string("Hi"));
-//            std::cout << user.discord_id << " " << user.user_id << " " << user.name << " [";
-//            for (const auto &item: user.courses) std::cout << item << ", ";
-//            std::cout << "] " << std::endl;
-
 
                 user.update();
                 user.save();
@@ -109,13 +104,10 @@ int main() {
             }
 
             Guild &guild = *Guild::get_guild(guild_id);
-            std::cout << "Tracked Courses size: " << guild.tracked_courses.size() << std::endl;
-
 
             std::vector<std::shared_ptr<TrackedCourse>> tracked_courses {guild.tracked_courses};
 
             for(const auto &item: tracked_courses) {
-                std::cout << item << " " << "Tracked Course ID: " << item->course_id << std::endl;
                 guild.remove_tracked_course(item);
             }
 

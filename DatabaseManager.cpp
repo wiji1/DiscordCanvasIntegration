@@ -172,20 +172,13 @@ void DatabaseManager::insert_course(const Course &course) {
 }
 
 void DatabaseManager::update_guild(const Guild &guild) {
-    std::cout << "x.1" << " " << &guild << std::endl;
     bsoncxx::builder::basic::array users_array_builder;
     for(const long &user : guild.verified_users) {
         users_array_builder.append(bsoncxx::types::b_int64{user});
     }
 
-    std::cout << "x.2" << std::endl;
-
-
     bsoncxx::builder::basic::array courses_array_builder;
     for(const std::shared_ptr<TrackedCourse> &tracked_course : guild.tracked_courses) {
-
-        std::cout << "Course ID: " << tracked_course->course_id << std::endl;
-        std::cout << "x.25" << std::endl;
 
         bsoncxx::builder::basic::document course_doc_builder;
         course_doc_builder.append(kvp("course_id", static_cast<int64_t>(tracked_course->course_id)));
@@ -195,8 +188,6 @@ void DatabaseManager::update_guild(const Guild &guild) {
         course_doc_builder.append(kvp("role_id", static_cast<int64_t>(tracked_course->role_id)));
         courses_array_builder.append(course_doc_builder.extract());
     }
-
-    std::cout << "x.3" << std::endl;
 
     auto update_doc = make_document(
             kvp("$set",
@@ -209,18 +200,12 @@ void DatabaseManager::update_guild(const Guild &guild) {
             )
     );
 
-    std::cout << "x.4" << std::endl;
-
     auto update = DatabaseManager::guild_collection.update_one(
             make_document(kvp("_id", bsoncxx::types::b_int64{guild.guild_id})),
             update_doc.view());
 
-    std::cout << "x.5" << std::endl;
-
     assert(update);
     assert(update->modified_count() <= 1);
-
-    std::cout << "x.6" << std::endl;
 }
 
 void DatabaseManager::insert_guild(const Guild &guild) {
