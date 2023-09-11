@@ -32,13 +32,17 @@ int main() {
         }
     });
 
-    bot->on_slashcommand([](const dpp::slashcommand_t & event) {
+    bot->on_slashcommand([](const dpp::slashcommand_t & event)   {
         if(event.command.get_command_name() == "verify") {
+            if(!Guild::is_registered(static_cast<long>(event.command.guild_id))) {
+                event.reply("This guild is not registered!");
+                return;
+            }
 
             std::shared_ptr<User> user {nullptr};
 
             try {
-                user.swap(User::get_user(event.command.usr.id));
+                user = User::get_user(static_cast<long>(event.command.usr.id));
             } catch (const DocumentNotFoundException &ex) {
                 dpp::interaction_modal_response modal("verification-form", "We need the following information from you");
                 modal.add_component(
@@ -63,9 +67,17 @@ int main() {
                                 set_text_style(dpp::text_paragraph)
                 );
                 event.dialog(modal);
+                return;
             }
 
-            Guild &guild {*Guild::get_guild(event.command.guild_id)};
+            Guild &guild {*Guild::get_guild(static_cast<long>(event.command.guild_id))};
+
+            if(std::find(guild.verified_users.begin(), guild.verified_users.end(), user->discord_id)!= guild.verified_users.end()) {
+                event.reply("You are already verified!");
+                return;
+            }
+
+            event.reply("Successfully Verified!");
             guild.verified_users.push_back(user->discord_id);
             guild.update();
         }

@@ -86,7 +86,16 @@ void Guild::add_tracked_course(long course_id) {
     course_role.set_name(course.name);
 
     bot->role_create(course_role, [&](auto &callback) {
-        if (callback.is_error()) {
+
+        std::cout << "Rate limit Info:" << std::endl << "--------------------------" << std::endl;
+        std::cout << callback.http_info.ratelimit_bucket << std::endl;
+        std::cout << callback.http_info.ratelimit_limit << std::endl;
+        std::cout << callback.http_info.ratelimit_remaining << std::endl;
+        std::cout << callback.http_info.ratelimit_reset_after << std::endl;
+        std::cout << callback.http_info.ratelimit_retry_after << std::endl;
+        std::cout << "--------------------------" << std::endl;
+
+        if(callback.is_error()) {
             std::cout << "Error: " << callback.get_error().message << std::endl;
         }
 
@@ -215,9 +224,6 @@ std::vector<Guild> Guild::get_tracking_guilds(Course &course) {
 }
 
 void Guild::update() {
-    //TODO Issue here when verifying, in between 1 and 2
-
-    std::cout << 1 << std::endl;
     std::vector<long> to_add {};
 
     std::vector<std::shared_ptr<TrackedCourse>> active_courses {tracked_courses};
@@ -226,9 +232,8 @@ void Guild::update() {
     for(const auto &user_id : active_users) {
         std::shared_ptr<User> user {nullptr};
 
-
         try {
-            user.swap(User::get_user(user_id));
+            user = User::get_user(user_id);
         } catch (const DocumentNotFoundException &ex) {
             verified_users.erase(std::remove(verified_users.begin(), verified_users.end(), user_id), verified_users.end());
 
@@ -254,8 +259,6 @@ void Guild::update() {
             }
         }
     }
-
-    std::cout << 2 << std::endl;
 
     for (const auto &tracked_course : active_courses) {
         remove_tracked_course(tracked_course);
@@ -284,6 +287,15 @@ void Guild::create_verified_role() {
     verified_role.set_name("Verified");
 
     bot->role_create(verified_role, [this](auto& callback) {
+
+        std::cout << "Rate limit Info:" << std::endl << "--------------------------" << std::endl;
+        std::cout << callback.http_info.ratelimit_bucket << std::endl;
+        std::cout << callback.http_info.ratelimit_limit << std::endl;
+        std::cout << callback.http_info.ratelimit_remaining << std::endl;
+        std::cout << callback.http_info.ratelimit_reset_after << std::endl;
+        std::cout << callback.http_info.ratelimit_retry_after << std::endl;
+        std::cout << "--------------------------" << std::endl;
+
         if(callback.is_error()) return;
 
         dpp::role role = std::get<dpp::role>(callback.value);
