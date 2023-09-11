@@ -51,6 +51,7 @@ void Guild::document_init(const bsoncxx::document::value &document) {
 void Guild::add_tracked_course(long course_id) {
 
     //TODO: Find out what's rate limiting me in here. Also add in rate limit handling (Discord role creation API, investigate)
+    //TODO: Fetch rate limits from headers to manage appropriately
     //TODO: Add startup channel/role existence verification. Properly remove tracked course/guild when not found
     //TODO: Implement course updating (When tracked course is removed, update inside the course object)
 
@@ -214,6 +215,9 @@ std::vector<Guild> Guild::get_tracking_guilds(Course &course) {
 }
 
 void Guild::update() {
+    //TODO Issue here when verifying, in between 1 and 2
+
+    std::cout << 1 << std::endl;
     std::vector<long> to_add {};
 
     std::vector<std::shared_ptr<TrackedCourse>> active_courses {tracked_courses};
@@ -221,6 +225,7 @@ void Guild::update() {
 
     for(const auto &user_id : active_users) {
         std::shared_ptr<User> user {nullptr};
+
 
         try {
             user.swap(User::get_user(user_id));
@@ -250,9 +255,12 @@ void Guild::update() {
         }
     }
 
+    std::cout << 2 << std::endl;
+
     for (const auto &tracked_course : active_courses) {
         remove_tracked_course(tracked_course);
     }
+
 
     for(const auto &course: to_add) add_tracked_course(course);
 
