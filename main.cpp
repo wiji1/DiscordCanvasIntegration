@@ -83,14 +83,14 @@ int main() {
         }
 
         if(event.command.get_command_name() == "test") {
+            bot->roles_get(event.command.guild_id, [](auto callback) {
+                dpp::role_map role_map = std::get<dpp::role_map>(callback.value);
 
-            try {
-                User &user {*User::get_user(static_cast<long>(event.command.get_issuing_user().id))};
-                event.reply(std::string("Hi"));
+            });
 
-                user.update();
-                user.save();
-            } catch(DocumentNotFoundException &ex) { std::cout << ex.what() << std::endl; }
+            bot->channels_get(event.command.guild_id, [](auto callback) {
+                dpp::channel_map channel_map = std::get<dpp::channel_map>(callback.value);
+            });
         }
 
         if(event.command.get_command_name() == "setup") {

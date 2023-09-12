@@ -264,10 +264,9 @@ void Guild::update() {
         remove_tracked_course(tracked_course);
     }
 
-
     for(const auto &course: to_add) add_tracked_course(course);
 
-    save();
+    verify_existence();
 }
 
 void Guild::save() const {
@@ -353,5 +352,27 @@ bool Guild::is_registered(long guild_id) {
     }
 
     return true;
+}
+
+void Guild::verify_existence() {
+    bot->roles_get(guild_id, [&](auto callback) {
+        dpp::role_map role_map = std::get<dpp::role_map>(callback.value);
+
+        bot->channels_get(guild_id, [&](auto callback) {
+            dpp::channel_map channel_map = std::get<dpp::channel_map>(callback.value);
+
+            if(role_map.find(verified_role_id) == role_map.end()) {
+                deregister();
+                return;
+            }
+
+            auto active_courses {tracked_courses};
+            for(const auto &course: active_courses) {
+                if(!course->verify_existence(role_map, channel_map)) remove_tracked_course(course);
+            }
+
+            save();
+        });
+    });
 }
 

@@ -22,6 +22,7 @@ public:
 
     void add_tracked_course(long course_id);
     void remove_tracked_course(const std::shared_ptr<TrackedCourse>& tracked_course);
+    void verify_existence();
     void create_verified_role();
     void deregister();
     bool is_tracking(const Course &course);
