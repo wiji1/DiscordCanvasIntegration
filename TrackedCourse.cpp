@@ -10,7 +10,7 @@ TrackedCourse::TrackedCourse() : course_id {0}, category_id {0}, announcements_c
 
 }
 
-bool TrackedCourse::verify_existence(const dpp::role_map role_map, const dpp::channel_map channel_map) const {
+bool TrackedCourse::verify_existence(const dpp::role_map &role_map, const dpp::channel_map &channel_map) const {
     if(role_map.find(role_id) == role_map.end()) {
        return false;
     }

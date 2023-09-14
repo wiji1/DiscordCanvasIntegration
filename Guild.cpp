@@ -264,7 +264,14 @@ void Guild::update() {
         remove_tracked_course(tracked_course);
     }
 
-    for(const auto &course: to_add) add_tracked_course(course);
+    //TODO: Remove this testing limit
+
+    int i {0};
+    for(const auto &course: to_add) {
+        if(i == 2) break;
+        add_tracked_course(course);
+        i++;
+    }
 
     verify_existence();
 }
