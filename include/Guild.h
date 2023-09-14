@@ -39,7 +39,7 @@ public:
 
     void document_init(const bsoncxx::document::value &document);
 
-    explicit Guild(bsoncxx::document::value document);
+    explicit Guild(const bsoncxx::document::value& document);
     explicit Guild(long guild_id);
 };
 
