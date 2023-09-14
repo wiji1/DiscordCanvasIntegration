@@ -356,14 +356,31 @@ bool Guild::is_registered(long guild_id) {
 
 void Guild::verify_existence() {
     bot->roles_get(guild_id, [&](auto callback) {
+
+        if(callback.is_error()) {
+            std::cout << "Error" << std::endl;
+        }
+
         dpp::role_map role_map = std::get<dpp::role_map>(callback.value);
+
+        std::cout << "Roles" << std::endl;
+        for (const auto &item: role_map) {
+            std::cout << item.first << std::endl;
+        }
+
+        if(role_map.find(verified_role_id) == role_map.end()) {
+            std::cout << "Deregistering" << std::endl;
+            deregister();
+            return;
+        }
 
         bot->channels_get(guild_id, [&](auto callback) {
             dpp::channel_map channel_map = std::get<dpp::channel_map>(callback.value);
 
-            if(role_map.find(verified_role_id) == role_map.end()) {
-                deregister();
-                return;
+
+            std::cout << "Channels" << std::endl;
+            for (const auto &item: channel_map) {
+                std::cout << item.first << std::endl;
             }
 
             auto active_courses {tracked_courses};

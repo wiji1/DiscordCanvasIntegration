@@ -59,7 +59,7 @@ void User::update() {
 
     long term_id_of_most_recent = 0;
 
-    for (const auto &course : courses_data) {
+    for(const auto &course : courses_data) {
 
         if (!course.contains("id") || !course.contains("enrollment_term_id")) {
             continue;
@@ -73,7 +73,7 @@ void User::update() {
         if(term_id > term_id_of_most_recent) term_id_of_most_recent = term_id;
     }
 
-    for (const auto &course : courses_data) {
+    for(const auto &course : courses_data) {
         if (!course.contains("id") || !course.contains("enrollment_term_id")) {
             continue;
         }
