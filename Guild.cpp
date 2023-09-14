@@ -17,7 +17,7 @@ Guild::Guild(long guild_id) : guild_id {guild_id} {
     }
 }
 
-Guild::Guild(bsoncxx::document::value document) {
+Guild::Guild(const bsoncxx::document::value& document) {
     document_init(document);
 }
 
@@ -35,7 +35,7 @@ void Guild::document_init(const bsoncxx::document::value &document) {
     auto tracked_courses_array = document["tracked_courses"];
     bsoncxx::array::view tracked_courses_view = tracked_courses_array.get_array();
 
-    for (const auto &course_value : tracked_courses_view) {
+    for(const auto &course_value : tracked_courses_view) {
         bsoncxx::document::view course_doc_view = course_value.get_document();
 
         long course_id = course_doc_view["course_id"].get_int64();
@@ -50,9 +50,15 @@ void Guild::document_init(const bsoncxx::document::value &document) {
 
 void Guild::add_tracked_course(long course_id) {
 
+    std::cout << "Used: " << used_roles << std::endl;
+    if(used_roles > MAXIMUM_ROLE_REQUESTS) {
+        std::cerr << "Failed to track course " << course_id << " for guild " << guild_id << " due to not enough remaining API requests." << std::endl;
+        return;
+    }
+
     //TODO: Find out what's rate limiting me in here. Also add in rate limit handling (Discord role creation API, investigate)
     //TODO: Fetch rate limits from headers to manage appropriately
-    //TODO: Add startup channel/role existence verification. Properly remove tracked course/guild when not found
+    //TODO: Verify Role/Channel existence before performing any actions
     //TODO: Implement course updating (When tracked course is removed, update inside the course object)
 
     Course &course {*Course::get_course(course_id)};
@@ -86,7 +92,6 @@ void Guild::add_tracked_course(long course_id) {
     course_role.set_name(course.name);
 
     bot->role_create(course_role, [&](auto &callback) {
-
         std::cout << "Rate limit Info:" << std::endl << "--------------------------" << std::endl;
         std::cout << callback.http_info.ratelimit_bucket << std::endl;
         std::cout << callback.http_info.ratelimit_limit << std::endl;
@@ -94,6 +99,8 @@ void Guild::add_tracked_course(long course_id) {
         std::cout << callback.http_info.ratelimit_reset_after << std::endl;
         std::cout << callback.http_info.ratelimit_retry_after << std::endl;
         std::cout << "--------------------------" << std::endl;
+
+        used_roles = callback.http_info.ratelimit_limit - callback.http_info.ratelimit_remaining;
 
         if(callback.is_error()) {
             std::cout << "Error: " << callback.get_error().message << std::endl;
@@ -260,7 +267,7 @@ void Guild::update() {
         }
     }
 
-    for (const auto &tracked_course : active_courses) {
+    for(const auto &tracked_course : active_courses) {
         remove_tracked_course(tracked_course);
     }
 
@@ -268,11 +275,10 @@ void Guild::update() {
 
     int i {0};
     for(const auto &course: to_add) {
-        if(i == 2) break;
+        if(i == 1) break;
         add_tracked_course(course);
         i++;
     }
-
     verify_existence();
 }
 
@@ -362,37 +368,27 @@ bool Guild::is_registered(long guild_id) {
 }
 
 void Guild::verify_existence() {
+    auto active_courses {tracked_courses};
+
     bot->roles_get(guild_id, [&](auto callback) {
-
-        if(callback.is_error()) {
-            std::cout << "Error" << std::endl;
-        }
-
         dpp::role_map role_map = std::get<dpp::role_map>(callback.value);
 
-        std::cout << "Roles" << std::endl;
-        for (const auto &item: role_map) {
-            std::cout << item.first << std::endl;
-        }
-
         if(role_map.find(verified_role_id) == role_map.end()) {
-            std::cout << "Deregistering" << std::endl;
             deregister();
             return;
+        }
+
+        if(tracked_courses.empty()) return;
+
+        for(const auto &course: active_courses) {
+            if(!course->verify_role_existence(role_map)) remove_tracked_course(course);
         }
 
         bot->channels_get(guild_id, [&](auto callback) {
             dpp::channel_map channel_map = std::get<dpp::channel_map>(callback.value);
 
-
-            std::cout << "Channels" << std::endl;
-            for (const auto &item: channel_map) {
-                std::cout << item.first << std::endl;
-            }
-
-            auto active_courses {tracked_courses};
             for(const auto &course: active_courses) {
-                if(!course->verify_existence(role_map, channel_map)) remove_tracked_course(course);
+                if(!course->verify_channel_existence(channel_map)) remove_tracked_course(course);
             }
 
             save();

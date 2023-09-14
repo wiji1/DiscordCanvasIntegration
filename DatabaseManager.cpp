@@ -29,17 +29,22 @@ void DatabaseManager::init() {
     guild_collection = database["guilds"];
 
     load_guilds();
+    std::cout << 5 << std::endl;
 }
 
 void DatabaseManager::load_guilds() {
     mongocxx::cursor cursor = guild_collection.find(bsoncxx::document::view_or_value{});
 
     for(auto&& doc : cursor) {
+        std::cout << 1 << std::endl;
         bsoncxx::document::value docValue{doc};
 
         long id = docValue.find("_id")->get_int64();
+        std::cout << 2 << std::endl;
         Guild::guild_map[id] = std::make_unique<Guild>(docValue);
+        std::cout << 3 << std::endl;
         Guild::guild_map[id]->update();
+        std::cout << 4 << std::endl;
     }
 
 }

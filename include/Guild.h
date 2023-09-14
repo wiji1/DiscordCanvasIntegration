@@ -13,12 +13,15 @@ extern std::unique_ptr<dpp::cluster> bot;
 
 class Guild {
 public:
+    static const int MAXIMUM_ROLE_REQUESTS = 3;
+
     static std::unordered_map<long, std::shared_ptr<Guild>> guild_map;
     std::vector<std::shared_ptr<TrackedCourse>> tracked_courses;
     std::vector<long> verified_users;
 
     long guild_id;
     long verified_role_id;
+    int used_roles = 0;
 
     void add_tracked_course(long course_id);
     void remove_tracked_course(const std::shared_ptr<TrackedCourse>& tracked_course);
@@ -39,7 +42,7 @@ public:
 
     void document_init(const bsoncxx::document::value &document);
 
-    explicit Guild(bsoncxx::document::value document);
+    explicit Guild(const bsoncxx::document::value& document);
     explicit Guild(long guild_id);
 };
 
