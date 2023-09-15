@@ -65,6 +65,7 @@ void Guild::add_tracked_course(long course_id) {
 
     Course &course {*Course::get_course(course_id)};
     course.tracking_guilds.push_back(guild_id);
+    course.save();
 
     std::shared_ptr<TrackedCourse> tracked_course = std::make_shared<TrackedCourse>();
     tracked_course->course_id = course_id;
@@ -208,6 +209,7 @@ void Guild::remove_tracked_course(const std::shared_ptr<TrackedCourse> &tracked_
     Course &course_object {*Course::get_course(tracked_course->course_id)};
     std::vector<long> &guilds {course_object.tracking_guilds};
     guilds.erase(std::remove(guilds.begin(), guilds.end(), guild_id), guilds.end());
+    course_object.save();
 
     for(int i {0}; i < tracked_courses.size(); i++) {
         TrackedCourse &course = *tracked_courses[i];
