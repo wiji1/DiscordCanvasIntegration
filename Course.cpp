@@ -58,17 +58,18 @@ void Course::update(const std::string &override_token) {
     course_id = {data["id"]};
     name = {data["course_code"]};
 
-    std::vector<Guild> guild_list {Guild::get_tracking_guilds(*this)};
-    std::vector<long> guild_id_list {};
-
-    tracking_guilds.clear();
-    guild_id_list.reserve(guild_list.size());
-
-    for (const Guild &guild : guild_list) {
-        guild_id_list.push_back(guild.guild_id);
-    }
-
-    tracking_guilds = {guild_id_list};
+    //Changed this handling to happen within Guild object
+//    std::vector<Guild> guild_list {Guild::get_tracking_guilds(*this)};
+//    std::vector<long> guild_id_list {};
+//
+//    tracking_guilds.clear();
+//    guild_id_list.reserve(guild_list.size());
+//
+//    for(const Guild &guild : guild_list) {
+//        guild_id_list.push_back(guild.guild_id);
+//    }
+//
+//    tracking_guilds = {guild_id_list};
 }
 
 User &Course::find_accessor() {

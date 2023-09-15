@@ -64,6 +64,7 @@ void Guild::add_tracked_course(long course_id) {
     //TODO: Implement course updating (When tracked course is removed, update inside the course object)
 
     Course &course {*Course::get_course(course_id)};
+    course.tracking_guilds.push_back(guild_id);
 
     std::shared_ptr<TrackedCourse> tracked_course = std::make_shared<TrackedCourse>();
     tracked_course->course_id = course_id;
@@ -198,11 +199,15 @@ void Guild::add_tracked_course(long course_id) {
     cv.wait(lock, [&completedCallbacks]() { return completedCallbacks == 4; });
 }
 
-void Guild::remove_tracked_course(const std::shared_ptr<TrackedCourse>& tracked_course) {
+void Guild::remove_tracked_course(const std::shared_ptr<TrackedCourse> &tracked_course) {
     bot->role_delete(guild_id, tracked_course->role_id);
     bot->channel_delete(tracked_course->category_id);
     bot->channel_delete(tracked_course->forums_channel);
     bot->channel_delete(tracked_course->announcements_channel);
+
+    Course &course_object {*Course::get_course(tracked_course->course_id)};
+    std::vector<long> &guilds {course_object.tracking_guilds};
+    guilds.erase(std::remove(guilds.begin(), guilds.end(), guild_id), guilds.end());
 
     for(int i {0}; i < tracked_courses.size(); i++) {
         TrackedCourse &course = *tracked_courses[i];
