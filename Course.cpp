@@ -2,6 +2,7 @@
 #include "include/Course.h"
 #include "include/DatabaseManager.h"
 #include "include/exceptions/DocumentNotFoundException.h"
+#include "include/exceptions/AccessorNotFoundException.h"
 #include "include/CanvasAPI.h"
 #include "include/Guild.h"
 #include <vector>
@@ -38,7 +39,14 @@ void Course::save() const {
 
 void Course::update(const std::string &override_token) {
     std::string accessor_token {override_token};
-    if(accessor_token.empty()) accessor_token = {find_accessor().user_token};
+
+    try {
+        if(accessor_token.empty()) accessor_token = {find_accessor().user_token};
+    } catch(AccessorNotFoundException &ex) {
+        remove();
+
+        return;
+    }
 
     auto promise {CanvasAPI::get_course(course_id, accessor_token)};
 
@@ -82,25 +90,23 @@ User &Course::find_accessor() {
 
         auto discord_guild {dpp::find_guild(guild_id)};
 
-        for (const auto &member: discord_guild->members) {
-            int count = std::count(
+        for(const auto &member: discord_guild->members) {
+            auto count = std::count(
                     member.second.roles.begin(),
                     member.second.roles.end(),
                     role->id
             );
 
-            if (count > 0) {
-                return *User::get_user(static_cast<long>(member.first));
+            if(count > 0) {
+                User &user {*User::get_user(static_cast<long>(member.first))};
+                user.update();
+
+                if(std::count(user.courses.begin(), user.courses.end(), course_id)) return user;
             }
         }
-
-        if(!guild.is_tracking(*this)) continue;
-
-        for(const auto &item: dpp::find_guild(guild_id)->members) {
-
-        }
     }
-    return *User::get_user(0);
+
+    throw AccessorNotFoundException("An accessor for that course was not found!", course_id);
 }
 
 
@@ -122,5 +128,18 @@ std::shared_ptr<Course> &Course::get_course(long course_id) {
 
     course_map[course_id] = std::make_unique<Course>(course_id);
     return course_map[course_id];
+}
+
+void Course::remove() const {
+    DatabaseManager::delete_course(*this);
+
+    for(auto it = course_map.begin(); it != course_map.end();) {
+        if (it->second.get() == this) {
+            course_map.erase(it);
+            break;
+        } else {
+            ++it;
+        }
+    }
 }
 

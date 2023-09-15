@@ -29,6 +29,7 @@ public:
 
     static void update_course(const Course &course);
     static void insert_course(const Course &course);
+    static void delete_course(const Course &course);
 
     static void update_guild(const Guild &guild);
     static void insert_guild(const Guild &guild);

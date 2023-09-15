@@ -42,6 +42,10 @@ void DatabaseManager::load_guilds() {
         Guild::guild_map[id]->update();
     }
 
+    for(const auto &guild: Guild::guild_map) {
+        for(const auto &course: guild.second->tracked_courses) Course::get_course(course->course_id);
+    }
+
 }
 
 bsoncxx::document::value DatabaseManager::fetch_user_document(long id) {
@@ -241,6 +245,10 @@ void DatabaseManager::insert_guild(const Guild &guild) {
 
 void DatabaseManager::delete_guild(const Guild &guild) {
     DatabaseManager::guild_collection.delete_one(make_document(kvp("_id", bsoncxx::types::b_int64{guild.guild_id})));
+}
+
+void DatabaseManager::delete_course(const Course &course) {
+    DatabaseManager::course_collection.delete_one(make_document(kvp("_id", bsoncxx::types::b_int64{course.course_id})));
 }
 
 mongocxx::client DatabaseManager::client;

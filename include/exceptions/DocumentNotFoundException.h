@@ -7,7 +7,7 @@
 
 class DocumentNotFoundException : public std::exception {
 public:
-    std::string message{"The requested document was not found!"};
+    std::string message;
     explicit DocumentNotFoundException(const std::string& what) {
         message = {what};
     }

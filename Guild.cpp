@@ -51,7 +51,6 @@ void Guild::document_init(const bsoncxx::document::value &document) {
 
 void Guild::add_tracked_course(long course_id) {
 
-    std::cout << "Used: " << used_roles << std::endl;
     if(used_roles >= MAXIMUM_ROLE_REQUESTS) {
         std::cerr << "Failed to track course " << course_id << " for guild " << guild_id << " due to not enough remaining API requests." << std::endl;
         return;

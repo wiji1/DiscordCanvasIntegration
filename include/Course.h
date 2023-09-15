@@ -15,6 +15,7 @@ public:
 
     void update(const std::string &override_token = "");
     void save() const;
+    void remove() const;
     User &find_accessor();
 
     static std::shared_ptr<Course> &get_or_create(long course_id, const std::string& access_token);
@@ -22,8 +23,6 @@ public:
 
     explicit Course(long course_id, const std::string& access_token);
     explicit Course(long discord_id);
-
-
 };
 
 
