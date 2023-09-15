@@ -240,19 +240,21 @@ void Guild::update() {
 
         try {
             user = User::get_user(user_id);
-        } catch (const DocumentNotFoundException &ex) {
+        } catch(const DocumentNotFoundException &ex) {
             verified_users.erase(std::remove(verified_users.begin(), verified_users.end(), user_id), verified_users.end());
 
             continue;
         }
 
         for(const auto &course : user->courses) {
+            try { Course::get_course(course); } catch(DocumentNotFoundException &ex) { }
+
             bool course_found = false;
 
             for(auto it = active_courses.begin(); it != active_courses.end();) {
                 const auto &tracked_course = *it;
 
-                if (tracked_course->course_id == course) {
+                if(tracked_course->course_id == course) {
                     it = active_courses.erase(it);
                     course_found = true;
                 } else {

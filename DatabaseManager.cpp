@@ -41,11 +41,6 @@ void DatabaseManager::load_guilds() {
         Guild::guild_map[id] = std::make_unique<Guild>(docValue);
         Guild::guild_map[id]->update();
     }
-
-    for(const auto &guild: Guild::guild_map) {
-        for(const auto &course: guild.second->tracked_courses) Course::get_course(course->course_id);
-    }
-
 }
 
 bsoncxx::document::value DatabaseManager::fetch_user_document(long id) {
