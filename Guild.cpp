@@ -275,10 +275,11 @@ void Guild::update() {
 
     int i {0};
     for(const auto &course: to_add) {
-        if(i == 1) break;
+        if(i == 2) break;
         add_tracked_course(course);
         i++;
     }
+
     verify_existence();
 }
 
@@ -369,7 +370,6 @@ bool Guild::is_registered(long guild_id) {
 
 void Guild::verify_existence() {
     auto active_courses {tracked_courses};
-
     bot->roles_get(guild_id, [&](auto callback) {
         dpp::role_map role_map = std::get<dpp::role_map>(callback.value);
 
