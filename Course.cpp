@@ -77,7 +77,7 @@ void Course::update(const std::string &override_token) {
         recent_assignments.push_back(id);
     }
 
-    //TODO: Get announcements
+    //TODO: Get announcements and make recent_announcements vector
 
     save();
 
