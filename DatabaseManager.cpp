@@ -131,8 +131,14 @@ void DatabaseManager::insert_user(const User &user) {
 
 void DatabaseManager::update_course(const Course &course) {
     bsoncxx::builder::basic::array guilds_array_builder;
-    for (const long &guild : course.tracking_guilds) {
+    for(const long &guild : course.tracking_guilds) {
         guilds_array_builder.append(bsoncxx::types::b_int64{guild});
+    }
+
+
+    bsoncxx::builder::basic::array assignments_array_builder;
+    for(const long &assignment : course.recent_assignments) {
+        assignments_array_builder.append(bsoncxx::types::b_int64{assignment});
     }
 
     auto update_doc = make_document(
@@ -140,7 +146,8 @@ void DatabaseManager::update_course(const Course &course) {
                 make_document(
                         kvp("_id", static_cast<int64_t>(course.course_id)),
                         kvp("name", course.name),
-                        kvp("tracking_guilds", guilds_array_builder.view())
+                        kvp("tracking_guilds", guilds_array_builder.view()),
+                        kvp("recent_assignments", assignments_array_builder.view())
                 )
             )
     );
@@ -155,14 +162,20 @@ void DatabaseManager::update_course(const Course &course) {
 
 void DatabaseManager::insert_course(const Course &course) {
     bsoncxx::builder::basic::array guilds_array_builder;
-    for (const long &guild : course.tracking_guilds) {
+    for(const long &guild : course.tracking_guilds) {
         guilds_array_builder.append(bsoncxx::types::b_int64{guild});
+    }
+
+    bsoncxx::builder::basic::array assignments_array_builder;
+    for(const long &assignment : course.recent_assignments) {
+        assignments_array_builder.append(bsoncxx::types::b_int64{assignment});
     }
 
     auto create_doc = make_document(
             kvp("_id", bsoncxx::types::b_int64{course.course_id}),
             kvp("name", course.name),
-            kvp("tracking_guilds", guilds_array_builder.view())
+            kvp("tracking_guilds", guilds_array_builder.view()),
+            kvp("recent_assignments", assignments_array_builder.view())
     );
 
     auto create = DatabaseManager::course_collection.insert_one(create_doc.view());

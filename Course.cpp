@@ -21,8 +21,15 @@ Course::Course(long course_id) : course_id {course_id} {
     auto guild_array{document["tracking_guilds"]};
     bsoncxx::array::view guild_view = guild_array.get_array();
 
-    for (const auto &guild_value: guild_view) {
+    for(const auto &guild_value: guild_view) {
         tracking_guilds.push_back(guild_value.get_int64());
+    }
+
+    auto assignment_array{document["recent_assignments"]};
+    bsoncxx::array::view assignment_view = assignment_array.get_array();
+
+    for(const auto &assignment_value: assignment_view) {
+        recent_assignments.push_back(assignment_value.get_int64());
     }
 }
 
@@ -48,15 +55,31 @@ void Course::update(const std::string &override_token) {
         return;
     }
 
-    auto promise {CanvasAPI::get_course(course_id, accessor_token)};
+    auto course_promise {CanvasAPI::get_course(course_id, accessor_token)};
+    std::stringstream course_stream {course_promise->get_future().get()};
+    nlohmann::json course_data;
+    course_stream >> course_data;
 
-    std::stringstream stream {promise->get_future().get()};
-    nlohmann::json data;
+    course_id = {course_data["id"]};
+    name = {course_data["course_code"]};
 
-    stream >> data;
+    auto assignment_promise {CanvasAPI::get_course(course_id, accessor_token)};
+    std::stringstream assignment_stream {assignment_promise->get_future().get()};
+    nlohmann::json assignment_data;
+    assignment_stream >> assignment_data;
 
-    course_id = {data["id"]};
-    name = {data["course_code"]};
+    for(const auto &assignment : assignment_data) {
+        int id = {assignment["id"]};
+
+        if(std::count(recent_assignments.begin(), recent_assignments.end(), id)) continue;
+        //TODO: Post Assignment to channels
+
+        recent_assignments.push_back(id);
+    }
+
+    //TODO: Get announcements
+
+    save();
 
     //Changed this handling to happen within Guild object
 //    std::vector<Guild> guild_list {Guild::get_tracking_guilds(*this)};
@@ -117,7 +140,6 @@ std::shared_ptr<Course> &Course::get_or_create(long course_id, const std::string
     } catch(DocumentNotFoundException &ignored) { }
 
     course_map[course_id] = std::make_unique<Course>(course_id, access_token);
-    course_map[course_id]->save();
     return course_map[course_id];
 }
 

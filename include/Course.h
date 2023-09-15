@@ -12,6 +12,7 @@ public:
     long course_id;
     std::string name;
     std::vector<long> tracking_guilds;
+    std::vector<long> recent_assignments;
 
     void update(const std::string &override_token = "");
     void save() const;
