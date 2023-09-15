@@ -362,8 +362,6 @@ void Guild::verify_existence() {
             return;
         }
 
-        if(tracked_courses.empty()) return;
-
         auto active_courses {tracked_courses};
 
         for(const auto &course: active_courses) {
@@ -377,6 +375,7 @@ void Guild::verify_existence() {
             for(const auto &course: active_courses) {
                 if(!course->verify_channel_existence(channel_map)) remove_tracked_course(course);
             }
+
             save();
         });
     });
