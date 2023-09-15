@@ -24,6 +24,7 @@ Guild::Guild(const bsoncxx::document::value& document) {
 void Guild::document_init(const bsoncxx::document::value &document) {
     guild_id = {document.find("_id")->get_int64()};
     verified_role_id = {document.find("verified_role_id")->get_int64()};
+    used_roles = {document.find("used_roles")->get_int32()};
 
     auto user_array{document["verified_users"]};
     bsoncxx::array::view user_view = user_array.get_array();
@@ -51,10 +52,12 @@ void Guild::document_init(const bsoncxx::document::value &document) {
 void Guild::add_tracked_course(long course_id) {
 
     std::cout << "Used: " << used_roles << std::endl;
-    if(used_roles > MAXIMUM_ROLE_REQUESTS) {
+    if(used_roles >= MAXIMUM_ROLE_REQUESTS) {
         std::cerr << "Failed to track course " << course_id << " for guild " << guild_id << " due to not enough remaining API requests." << std::endl;
         return;
     }
+
+    used_roles++;
 
     //TODO: Find out what's rate limiting me in here. Also add in rate limit handling (Discord role creation API, investigate)
     //TODO: Fetch rate limits from headers to manage appropriately
@@ -92,17 +95,9 @@ void Guild::add_tracked_course(long course_id) {
     course_role.set_name(course.name);
 
     bot->role_create(course_role, [&](auto &callback) {
-        std::cout << "Rate limit Info:" << std::endl << "--------------------------" << std::endl;
-        std::cout << callback.http_info.ratelimit_bucket << std::endl;
-        std::cout << callback.http_info.ratelimit_limit << std::endl;
-        std::cout << callback.http_info.ratelimit_remaining << std::endl;
-        std::cout << callback.http_info.ratelimit_reset_after << std::endl;
-        std::cout << callback.http_info.ratelimit_retry_after << std::endl;
-        std::cout << "--------------------------" << std::endl;
+        if(callback.http_info.ratelimit_remaining == callback.http_info.ratelimit_limit - 1) used_roles = 0;
 
-        used_roles = callback.http_info.ratelimit_limit - callback.http_info.ratelimit_remaining;
-
-        if(callback.is_error()) {
+            if(callback.is_error()) {
             std::cout << "Error: " << callback.get_error().message << std::endl;
         }
 
@@ -271,14 +266,7 @@ void Guild::update() {
         remove_tracked_course(tracked_course);
     }
 
-    //TODO: Remove this testing limit
-
-    int i {0};
-    for(const auto &course: to_add) {
-        if(i == 2) break;
-        add_tracked_course(course);
-        i++;
-    }
+    for(const auto &course: to_add) add_tracked_course(course);
 
     verify_existence();
 }
@@ -300,14 +288,6 @@ void Guild::create_verified_role() {
     verified_role.set_name("Verified");
 
     bot->role_create(verified_role, [this](auto& callback) {
-
-        std::cout << "Rate limit Info:" << std::endl << "--------------------------" << std::endl;
-        std::cout << callback.http_info.ratelimit_bucket << std::endl;
-        std::cout << callback.http_info.ratelimit_limit << std::endl;
-        std::cout << callback.http_info.ratelimit_remaining << std::endl;
-        std::cout << callback.http_info.ratelimit_reset_after << std::endl;
-        std::cout << callback.http_info.ratelimit_retry_after << std::endl;
-        std::cout << "--------------------------" << std::endl;
 
         if(callback.is_error()) return;
 
@@ -369,8 +349,12 @@ bool Guild::is_registered(long guild_id) {
 }
 
 void Guild::verify_existence() {
-    auto active_courses {tracked_courses};
     bot->roles_get(guild_id, [&](auto callback) {
+        if(callback.is_error()) {
+            deregister();
+            return;
+        }
+
         dpp::role_map role_map = std::get<dpp::role_map>(callback.value);
 
         if(role_map.find(verified_role_id) == role_map.end()) {
@@ -380,6 +364,8 @@ void Guild::verify_existence() {
 
         if(tracked_courses.empty()) return;
 
+        auto active_courses {tracked_courses};
+
         for(const auto &course: active_courses) {
             if(!course->verify_role_existence(role_map)) remove_tracked_course(course);
         }
@@ -387,10 +373,10 @@ void Guild::verify_existence() {
         bot->channels_get(guild_id, [&](auto callback) {
             dpp::channel_map channel_map = std::get<dpp::channel_map>(callback.value);
 
+            auto active_courses {tracked_courses};
             for(const auto &course: active_courses) {
                 if(!course->verify_channel_existence(channel_map)) remove_tracked_course(course);
             }
-
             save();
         });
     });

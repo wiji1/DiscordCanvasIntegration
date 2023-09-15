@@ -29,22 +29,17 @@ void DatabaseManager::init() {
     guild_collection = database["guilds"];
 
     load_guilds();
-    std::cout << 5 << std::endl;
 }
 
 void DatabaseManager::load_guilds() {
     mongocxx::cursor cursor = guild_collection.find(bsoncxx::document::view_or_value{});
 
     for(auto&& doc : cursor) {
-        std::cout << 1 << std::endl;
         bsoncxx::document::value docValue{doc};
 
         long id = docValue.find("_id")->get_int64();
-        std::cout << 2 << std::endl;
         Guild::guild_map[id] = std::make_unique<Guild>(docValue);
-        std::cout << 3 << std::endl;
         Guild::guild_map[id]->update();
-        std::cout << 4 << std::endl;
     }
 
 }
@@ -199,6 +194,7 @@ void DatabaseManager::update_guild(const Guild &guild) {
                 make_document(
                         kvp("_id", static_cast<int64_t>(guild.guild_id)),
                         kvp("verified_role_id", static_cast<int64_t>(guild.verified_role_id)),
+                        kvp("used_roles", static_cast<int32_t>(guild.used_roles)),
                         kvp("verified_users", users_array_builder.view()),
                         kvp("tracked_courses", courses_array_builder.view())
                 )
@@ -233,6 +229,7 @@ void DatabaseManager::insert_guild(const Guild &guild) {
     auto create_doc =  make_document(
             kvp("_id", static_cast<int64_t>(guild.guild_id)),
             kvp("verified_role_id", static_cast<int64_t>(guild.verified_role_id)),
+            kvp("used_roles", static_cast<int32_t>(guild.used_roles)),
             kvp("verified_users", users_array_builder.view()),
             kvp("tracked_courses", courses_array_builder.view())
     );
