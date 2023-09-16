@@ -58,10 +58,7 @@ void Guild::add_tracked_course(long course_id) {
 
     used_roles++;
 
-    //TODO: Find out what's rate limiting me in here. Also add in rate limit handling (Discord role creation API, investigate)
-    //TODO: Fetch rate limits from headers to manage appropriately
     //TODO: Verify Role/Channel existence before performing any actions
-    //TODO: Implement course updating (When tracked course is removed, update inside the course object)
 
     Course &course {*Course::get_course(course_id)};
     course.tracking_guilds.push_back(guild_id);
@@ -405,7 +402,7 @@ void Guild::verify_user(long user_id) {
     verified_users.push_back(user_id);
     update();
 
-    //TODO: Find a way to move the
+    //TODO: Find a way to ensure that the user cannot be fetched as an accessor before course roles are loaded
     User &user {*User::get_user(user_id)};
     for(const auto &course: user.courses) {
         for(const auto &tracked_course: tracked_courses) {
