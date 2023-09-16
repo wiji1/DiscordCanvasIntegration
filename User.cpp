@@ -23,7 +23,7 @@ User::User(long discord_id) : discord_id {discord_id} {
     auto course_array{document["courses"]};
     bsoncxx::array::view course_view = course_array.get_array();
 
-    for (const auto &course_value: course_view) {
+    for(const auto &course_value: course_view) {
         courses.push_back(course_value.get_int64());
     }
 }
@@ -90,6 +90,7 @@ void User::update() {
         courses.push_back(course["id"]);
         Course::get_or_create(course["id"], user_token);
     }
+    save();
 }
 
 std::shared_ptr<User> &User::create_user(std::string user_token, long discord_id) {

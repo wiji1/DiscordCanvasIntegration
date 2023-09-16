@@ -248,8 +248,13 @@ void Guild::update() {
             continue;
         }
 
-        for(const auto &course : user->courses) {
-            try { Course::get_course(course); } catch(DocumentNotFoundException &ex) { }
+        std::vector<long> user_courses {user->courses};
+        for(const auto &course : user_courses) {
+            try { Course::get_course(course); } catch(DocumentNotFoundException &ex) {
+                user->update();
+                update();
+                return;
+            }
 
             bool course_found = false;
 
@@ -258,13 +263,20 @@ void Guild::update() {
 
                 if(tracked_course->course_id == course) {
                     it = active_courses.erase(it);
+
+                    Course &course_object {*Course::get_course(course)};
+                    if(std::count(course_object.tracking_guilds.begin(), course_object.tracking_guilds.end(), guild_id) < 1) {
+                        course_object.tracking_guilds.push_back(guild_id);
+                        course_object.save();
+                    }
+
                     course_found = true;
                 } else {
                     ++it;
                 }
             }
 
-            if (!course_found) {
+            if(!course_found) {
                 to_add.push_back(course);
             }
         }

@@ -53,8 +53,9 @@ void Course::save() const {
 
 void Course::update(const std::string &override_token) {
     std::string accessor_token {override_token};
-
     try {
+        //TODO: If user is invalid, request again without after updating the user, make a new exception for this
+        //TODO: On user update, if key is invalid, un-verify them
         if(accessor_token.empty()) accessor_token = {find_accessor().user_token};
     } catch(AccessorNotFoundException &ex) {
         remove();
@@ -80,8 +81,21 @@ void Course::update(const std::string &override_token) {
 
         if(std::count(recent_assignments.begin(), recent_assignments.end(), id)) continue;
         //TODO: Post Assignment to channels
+        std::cout << "Posting Assignment: " << id << std::endl;
 
         recent_assignments.push_back(id);
+    }
+
+    for(const auto &item: recent_assignments) {
+        bool found {false};
+        for(const auto &assignment: assignment_data) {
+            int id = {assignment["id"]};
+            if(item == id) {
+                found = true;
+                break;
+            }
+        }
+        if(!found) std::remove(recent_assignments.begin(), recent_assignments.end(), item);
     }
 
     auto announcement_promise {CanvasAPI::get_announcements(course_id, accessor_token)};
@@ -94,8 +108,21 @@ void Course::update(const std::string &override_token) {
 
         if(std::count(recent_announcements.begin(), recent_announcements.end(), id)) continue;
         //TODO: Post announcements to channels
+        std::cout << "Posting Announcement: " << id << std::endl;
 
         recent_announcements.push_back(id);
+    }
+    
+    for(const auto &item: recent_announcements) {
+        bool found {false};
+        for(const auto &announcement: announcement_data) {
+            int id = {announcement["id"]};
+            if(item == id) {
+                found = true;
+                break;
+            }
+        }
+        if(!found) std::remove(recent_announcements.begin(), recent_announcements.end(), item);
     }
 
     save();
@@ -142,8 +169,6 @@ User &Course::find_accessor() {
 
             if(count > 0) {
                 User &user {*User::get_user(static_cast<long>(member.first))};
-                user.update();
-
                 if(std::count(user.courses.begin(), user.courses.end(), course_id)) return user;
             }
         }
