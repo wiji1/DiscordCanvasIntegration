@@ -78,8 +78,7 @@ int main() {
             }
 
             event.reply("Successfully Verified!");
-            guild.verified_users.push_back(user->discord_id);
-            guild.update();
+            guild.verify_user(user->discord_id);
         }
 
         if(event.command.get_command_name() == "test") {
@@ -149,8 +148,7 @@ int main() {
 
         user.save();
         Guild &guild = *Guild::get_guild(event.command.guild_id);
-        guild.verified_users.push_back(user.discord_id);
-        guild.update();
+        guild.verify_user(user.discord_id);
     });
 
     bot->start(dpp::st_wait);

@@ -105,13 +105,6 @@ void Guild::add_tracked_course(long course_id) {
         dpp::role role = std::get<dpp::role>(callback.value);
         tracked_course->role_id = static_cast<long>(role.id);
 
-        for(const auto &user_id: verified_users) {
-            User &user {*User::get_user(user_id)};
-            if(!std::count(user.courses.begin(), user.courses.end(), course_id)) continue;
-
-            bot->guild_member_add_role(guild_id, user_id, role.id);
-        }
-
         role_promise.set_value(role);
         handle_callback(callback.is_error());
     });
@@ -406,5 +399,20 @@ void Guild::verify_existence() {
             save();
         });
     });
+}
+
+void Guild::verify_user(long user_id) {
+    verified_users.push_back(user_id);
+    update();
+
+    //TODO: Find a way to move the
+    User &user {*User::get_user(user_id)};
+    for(const auto &course: user.courses) {
+        for(const auto &tracked_course: tracked_courses) {
+            if(tracked_course->course_id != course) continue;
+
+            bot->guild_member_add_role(guild_id, user_id, tracked_course->role_id);
+        }
+    }
 }
 
