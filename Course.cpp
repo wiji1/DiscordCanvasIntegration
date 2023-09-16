@@ -52,6 +52,12 @@ void Course::save() const {
 }
 
 void Course::update(const std::string &override_token) {
+    if(!is_active) {
+        std::cout << "Inactive!" << std::endl;
+        return;
+    }
+    std::cout << "Active!" << std::endl;
+
     std::string accessor_token {override_token};
     try {
         //TODO: If user is invalid, request again without after updating the user, make a new exception for this
@@ -59,6 +65,7 @@ void Course::update(const std::string &override_token) {
         if(accessor_token.empty()) accessor_token = {find_accessor().user_token};
     } catch(AccessorNotFoundException &ex) {
         remove();
+        std::cout << "Removing course" << std::endl;
 
         return;
     }

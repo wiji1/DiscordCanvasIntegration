@@ -399,16 +399,29 @@ void Guild::verify_existence() {
 }
 
 void Guild::verify_user(long user_id) {
+    User &user {*User::get_user(user_id)};
+
+    for(const auto &course_id: user.courses) {
+        try {
+            Course &course {*Course::get_course(course_id)};
+            course.is_active = false;
+        } catch(DocumentNotFoundException &ex) {
+            user.update();
+            verify_user(user_id);
+            return;
+        }
+    }
     verified_users.push_back(user_id);
     update();
 
-    //TODO: Find a way to ensure that the user cannot be fetched as an accessor before course roles are loaded
-    User &user {*User::get_user(user_id)};
-    for(const auto &course: user.courses) {
+    for(const auto &course_id: user.courses) {
         for(const auto &tracked_course: tracked_courses) {
-            if(tracked_course->course_id != course) continue;
+            if(tracked_course->course_id != course_id) continue;
 
-            bot->guild_member_add_role(guild_id, user_id, tracked_course->role_id);
+            bot->guild_member_add_role(guild_id, user_id, tracked_course->role_id, [&](auto &callback) {
+                Course &course {*Course::get_course(course_id)};
+                course.is_active = true;
+            });
         }
     }
 }

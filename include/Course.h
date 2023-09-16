@@ -10,6 +10,8 @@ private:
     static std::unordered_map<long, std::shared_ptr<Course>> course_map;
 public:
     long course_id;
+    bool is_active {true};
+
     std::string name;
     std::vector<long> tracking_guilds;
     std::vector<long> recent_assignments;
