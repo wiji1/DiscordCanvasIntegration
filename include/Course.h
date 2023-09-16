@@ -13,6 +13,7 @@ public:
     std::string name;
     std::vector<long> tracking_guilds;
     std::vector<long> recent_assignments;
+    std::vector<long> recent_announcements;
 
     void update(const std::string &override_token = "");
     void save() const;

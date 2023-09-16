@@ -31,6 +31,13 @@ Course::Course(long course_id) : course_id {course_id} {
     for(const auto &assignment_value: assignment_view) {
         recent_assignments.push_back(assignment_value.get_int64());
     }
+
+    auto announcement_array{document["recent_announcements"]};
+    bsoncxx::array::view announcement_view = announcement_array.get_array();
+
+    for(const auto &announcement_value: announcement_view) {
+        recent_announcements.push_back(announcement_value.get_int64());
+    }
 }
 
 void Course::save() const {
@@ -63,7 +70,7 @@ void Course::update(const std::string &override_token) {
     course_id = {course_data["id"]};
     name = {course_data["course_code"]};
 
-    auto assignment_promise {CanvasAPI::get_course(course_id, accessor_token)};
+    auto assignment_promise {CanvasAPI::get_assignments(course_id, accessor_token)};
     std::stringstream assignment_stream {assignment_promise->get_future().get()};
     nlohmann::json assignment_data;
     assignment_stream >> assignment_data;
@@ -77,7 +84,19 @@ void Course::update(const std::string &override_token) {
         recent_assignments.push_back(id);
     }
 
-    //TODO: Get announcements and make recent_announcements vector
+    auto announcement_promise {CanvasAPI::get_announcements(course_id, accessor_token)};
+    std::stringstream announcement_stream {announcement_promise->get_future().get()};
+    nlohmann::json announcement_data;
+    announcement_stream >> announcement_data;
+
+    for(const auto &announcement : announcement_data) {
+        int id = {announcement["id"]};
+
+        if(std::count(recent_announcements.begin(), recent_announcements.end(), id)) continue;
+        //TODO: Post announcements to channels
+
+        recent_announcements.push_back(id);
+    }
 
     save();
 
