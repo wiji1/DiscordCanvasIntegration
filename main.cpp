@@ -84,8 +84,11 @@ int main() {
 
         if(event.command.get_command_name() == "test") {
             User &user {*User::get_user(static_cast<long>(event.command.usr.id))};
-            Course &course {*Course::get_course(user.courses[0])};
-            course.update();
+            for(const auto &item: user.courses) {
+                Course &course {*Course::get_course(item)};
+                course.update();
+            }
+
         }
 
         if(event.command.get_command_name() == "setup") {
@@ -123,8 +126,8 @@ int main() {
 
             Guild &guild = *Guild::get_guild(guild_id);
 
-            guild.deregister();
             event.reply("Cleaning up!");
+            guild.deregister();
         }
     });
 
