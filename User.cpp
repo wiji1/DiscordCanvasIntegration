@@ -39,9 +39,9 @@ void User::save() const {
     DatabaseManager::update_user(*this);
 }
 
-void User::update() {
-    auto user_promise = CanvasAPI::get_user_profile(user_token);
-    std::stringstream profile_stream {user_promise->get_future().get()};
+dpp::task<void> User::update() {
+    std::string user_response = co_await CanvasAPI::get_user_profile(user_token);
+    std::stringstream profile_stream {user_response};
     nlohmann::json profile_data;
 
     profile_stream >> profile_data;
@@ -50,8 +50,8 @@ void User::update() {
     user_id = {profile_data["id"]};
     name = {profile_data["name"]};
 
-    auto courses_promise = CanvasAPI::get_user_courses(user_token);
-    std::stringstream courses_stream {courses_promise->get_future().get()};
+    std::string courses_response = co_await CanvasAPI::get_user_courses(user_token);
+    std::stringstream courses_stream {courses_response};
     nlohmann::json courses_data;
 
     courses.clear();

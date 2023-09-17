@@ -70,16 +70,16 @@ dpp::task<void> Course::update(const std::string &override_token) {
         co_return;
     }
 
-    std::string response = co_await CanvasAPI::get_course(course_id, accessor_token);
+    std::string course_response = co_await CanvasAPI::get_course(course_id, accessor_token);
     nlohmann::json course_data;
-    std::stringstream course_stream {response};
+    std::stringstream course_stream {course_response};
     course_stream >> course_data;
 
     course_id = {course_data["id"]};
     name = {course_data["course_code"]};
 
-    auto assignment_promise {CanvasAPI::get_assignments(course_id, accessor_token)};
-    std::stringstream assignment_stream {assignment_promise->get_future().get()};
+    std::string assignment_response = co_await CanvasAPI::get_assignments(course_id, accessor_token);
+    std::stringstream assignment_stream {assignment_response};
     nlohmann::json assignment_data;
     assignment_stream >> assignment_data;
 
@@ -105,8 +105,8 @@ dpp::task<void> Course::update(const std::string &override_token) {
         if(!found) std::remove(recent_assignments.begin(), recent_assignments.end(), item);
     }
 
-    auto announcement_promise {CanvasAPI::get_announcements(course_id, accessor_token)};
-    std::stringstream announcement_stream {announcement_promise->get_future().get()};
+    std::string announcement_response = co_await CanvasAPI::get_announcements(course_id, accessor_token);
+    std::stringstream announcement_stream {announcement_response};
     nlohmann::json announcement_data;
     announcement_stream >> announcement_data;
 
