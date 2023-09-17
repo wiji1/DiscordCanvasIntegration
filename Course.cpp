@@ -51,10 +51,10 @@ void Course::save() const {
     DatabaseManager::update_course(*this);
 }
 
-void Course::update(const std::string &override_token) {
+dpp::task<void> Course::update(const std::string &override_token) {
     if(!is_active) {
         std::cout << "Inactive!" << std::endl;
-        return;
+        co_return;
     }
     std::cout << "Active!" << std::endl;
 
@@ -67,12 +67,12 @@ void Course::update(const std::string &override_token) {
         remove();
         std::cout << "Removing course" << std::endl;
 
-        return;
+        co_return;
     }
 
-    auto course_promise {CanvasAPI::get_course(course_id, accessor_token)};
-    std::stringstream course_stream {course_promise->get_future().get()};
+    std::string response = co_await CanvasAPI::get_course(course_id, accessor_token);
     nlohmann::json course_data;
+    std::stringstream course_stream {response};
     course_stream >> course_data;
 
     course_id = {course_data["id"]};
@@ -119,7 +119,7 @@ void Course::update(const std::string &override_token) {
 
         recent_announcements.push_back(id);
     }
-    
+
     for(const auto &item: recent_announcements) {
         bool found {false};
         for(const auto &announcement: announcement_data) {

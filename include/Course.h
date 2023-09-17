@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <dpp/dpp.h>
 #include "User.h"
 
 class Course {
@@ -17,7 +18,7 @@ public:
     std::vector<long> recent_assignments;
     std::vector<long> recent_announcements;
 
-    void update(const std::string &override_token = "");
+    dpp::task<void> update(const std::string &override_token = "");
     void save() const;
     void remove() const;
     User &find_accessor();

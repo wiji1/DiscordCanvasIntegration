@@ -29,6 +29,7 @@ int main() {
             bot->global_command_create(dpp::slashcommand("setup", "testing", bot->me.id));
             bot->global_command_create(dpp::slashcommand("cleanup", "testing", bot->me.id));
             bot->global_command_create(dpp::slashcommand("save", "testing", bot->me.id));
+            bot->global_command_create(dpp::slashcommand("ping", "testing", bot->me.id));
         }
     });
 
@@ -88,6 +89,10 @@ int main() {
                 course.update();
             }
 
+        }
+
+        if(event.command.get_command_name() == "ping") {
+            event.reply("Pong!");
         }
 
         if(event.command.get_command_name() == "setup") {

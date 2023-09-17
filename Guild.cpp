@@ -102,6 +102,12 @@ void Guild::add_tracked_course(long course_id) {
         dpp::role role = std::get<dpp::role>(callback.value);
         tracked_course->role_id = static_cast<long>(role.id);
 
+        for (const auto &item: verified_users) {
+            User &user {*User::get_user(item)};
+            if(!std::count(user.courses.begin(), user.courses.end(), course_id)) continue;
+            bot->guild_member_add_role(guild_id, user.discord_id, role.id);
+        }
+
         role_promise.set_value(role);
         handle_callback(callback.is_error());
     });
