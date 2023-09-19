@@ -13,7 +13,7 @@ extern std::unique_ptr<dpp::cluster> bot;
 
 class Guild {
 public:
-    static const int MAXIMUM_ROLE_REQUESTS = 100;
+    static const int MAXIMUM_ROLE_REQUESTS = 3;
 
     static std::unordered_map<long, std::shared_ptr<Guild>> guild_map;
     std::vector<std::shared_ptr<TrackedCourse>> tracked_courses;
@@ -23,9 +23,9 @@ public:
     long verified_role_id;
     int used_roles = 0;
 
-    void add_tracked_course(long course_id);
+    dpp::task<void> add_tracked_course(long course_id);
     void remove_tracked_course(const std::shared_ptr<TrackedCourse>& tracked_course);
-    void verify_existence();
+    dpp::task<void> verify_existence();
     void verify_user(long user_id);
     void create_verified_role();
     void deregister();

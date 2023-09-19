@@ -49,11 +49,11 @@ void Guild::document_init(const bsoncxx::document::value &document) {
     }
 }
 
-void Guild::add_tracked_course(long course_id) {
+dpp::task<void> Guild::add_tracked_course(long course_id) {
 
     if(used_roles >= MAXIMUM_ROLE_REQUESTS) {
         std::cerr << "Failed to track course " << course_id << " for guild " << guild_id << " due to not enough remaining API requests." << std::endl;
-        return;
+        co_return;
     }
 
     used_roles++;
@@ -67,56 +67,28 @@ void Guild::add_tracked_course(long course_id) {
     std::shared_ptr<TrackedCourse> tracked_course = std::make_shared<TrackedCourse>();
     tracked_course->course_id = course_id;
 
-    int completedCallbacks = 0;
-    std::condition_variable cv;
-    std::mutex mtx;
-
-    auto handle_callback = [&completedCallbacks, &cv, &tracked_course, &mtx, this](bool isError) {
-        std::unique_lock<std::mutex> lock(mtx);
-        if (isError) {
-            std::cout << "Error occurred in callback." << std::endl;
-        }
-
-        completedCallbacks++;
-        if(completedCallbacks == 4) {
-            tracked_courses.push_back(tracked_course);
-
-            cv.notify_all();
-        }
-    };
-
-    std::promise<dpp::role> role_promise;
-    std::future<dpp::role> role_future = role_promise.get_future();
-
+    //Create Course Role
     dpp::role course_role;
     course_role.guild_id = guild_id;
     course_role.set_name(course.name);
 
-    bot->role_create(course_role, [&](auto &callback) {
-        if(callback.http_info.ratelimit_remaining == callback.http_info.ratelimit_limit - 1) used_roles = 0;
+    dpp::confirmation_callback_t role_callback = co_await bot->co_role_create(course_role);
+    if(role_callback.http_info.ratelimit_remaining == role_callback.http_info.ratelimit_limit - 1) used_roles = 0;
 
-            if(callback.is_error()) {
-            std::cout << "Error: " << callback.get_error().message << std::endl;
-        }
+    if(role_callback.is_error()) {
+        std::cout << "Error: " << role_callback.get_error().message << std::endl;
+    }
 
-        dpp::role role = std::get<dpp::role>(callback.value);
-        tracked_course->role_id = static_cast<long>(role.id);
+    course_role = std::get<dpp::role>(role_callback.value);
+    tracked_course->role_id = static_cast<long>(course_role.id);
 
-        for (const auto &item: verified_users) {
-            User &user {*User::get_user(item)};
-            if(!std::count(user.courses.begin(), user.courses.end(), course_id)) continue;
-            bot->guild_member_add_role(guild_id, user.discord_id, role.id);
-        }
+    for(const auto &item: verified_users) {
+        User &user {*User::get_user(item)};
+        if(!std::count(user.courses.begin(), user.courses.end(), course_id)) continue;
+        bot->guild_member_add_role(guild_id, user.discord_id, course_role.id);
+    }
 
-        role_promise.set_value(role);
-        handle_callback(callback.is_error());
-    });
-
-    dpp::role role = role_future.get();
-
-    std::promise<long> category_promise;
-    std::future<long> category_future = category_promise.get_future();
-
+    //Create Category Channel
     dpp::channel category {};
     category.set_guild_id(guild_id);
     category.set_type(dpp::channel_type::CHANNEL_CATEGORY);
@@ -126,33 +98,25 @@ void Guild::add_tracked_course(long course_id) {
     dpp::permission category_deny {};
 
     category_allow.set(dpp::p_view_channel);
-    category.add_permission_overwrite(role.id, dpp::overwrite_type::ot_role, category_allow, category_deny);
+    category.add_permission_overwrite(course_role.id, dpp::overwrite_type::ot_role, category_allow, category_deny);
 
     category_allow.set();
     category_deny.set(dpp::p_view_channel);
 
     category.add_permission_overwrite(guild_id, dpp::overwrite_type::ot_role, category_allow, category_deny);
 
+    dpp::confirmation_callback_t category_callback = co_await bot->co_channel_create(category);
+    if(category_callback.is_error()) {
+        std::cout << "Error: " << category_callback.get_error().message << std::endl;
+    }
+    category = std::get<dpp::channel>(category_callback.value);
+    tracked_course->category_id = static_cast<long>(category.id);
 
-
-    bot->channel_create(category, [&](auto &callback) {
-        if (callback.is_error()) {
-            std::cout << "Error: " << callback.get_error().message << std::endl;
-        }
-
-        dpp::channel category = std::get<dpp::channel>(callback.value);
-        tracked_course->category_id = static_cast<long>(category.id);
-
-        category_promise.set_value(static_cast<long>(category.id));
-        handle_callback(callback.is_error());
-    });
-
-    long categoryId = category_future.get();
-
+    //Create Announcements Channel
     dpp::channel announcements {};
     announcements.set_guild_id(guild_id);
     announcements.set_type(dpp::channel_type::CHANNEL_TEXT);
-    announcements.set_parent_id(categoryId);
+    announcements.set_parent_id(category.id);
     announcements.set_name("Announcements");
     announcements.set_position(1);
 
@@ -160,47 +124,40 @@ void Guild::add_tracked_course(long course_id) {
     dpp::permission announcements_deny {};
 
     announcements_deny.set(dpp::p_send_messages);
-    announcements.add_permission_overwrite(role.id, dpp::overwrite_type::ot_role, announcements_allow, announcements_deny);
+    announcements.add_permission_overwrite(course_role.id, dpp::overwrite_type::ot_role, announcements_allow, announcements_deny);
 
-    bot->channel_create(announcements, [&](auto &callback) {
-        if (callback.is_error()) {
-            std::cout << "Error: " << callback.get_error().message << std::endl;
-        }
+    dpp::confirmation_callback_t announcements_callback = co_await bot->co_channel_create(announcements);
+    if(announcements_callback.is_error()) {
+        std::cout << "Error: " << announcements_callback.get_error().message << std::endl;
+    }
+    announcements = std::get<dpp::channel>(announcements_callback.value);
+    tracked_course->announcements_channel = static_cast<long>(announcements.id);
 
-        dpp::channel announcements = std::get<dpp::channel>(callback.value);
-        tracked_course->announcements_channel = static_cast<long>(announcements.id);
+    //Create Forums Channel
+    dpp::channel forums {};
+    forums.set_guild_id(guild_id);
+    forums.set_type(dpp::channel_type::CHANNEL_FORUM);
+    forums.set_parent_id(category.id);
+    forums.set_name("Assignments");
+    forums.set_position(1);
+    forums.set_default_forum_layout(dpp::forum_layout_type::fl_list_view);
 
-        handle_callback(callback.is_error());
+    dpp::permission forums_allow {};
+    dpp::permission forums_deny {};
 
-        dpp::channel forums {};
-        forums.set_guild_id(guild_id);
-        forums.set_type(dpp::channel_type::CHANNEL_FORUM);
-        forums.set_parent_id(categoryId);
-        forums.set_name("Assignments");
-        forums.set_position(1);
-        forums.set_default_forum_layout(dpp::forum_layout_type::fl_list_view);
+    forums_allow.set(dpp::p_send_messages_in_threads);
+    forums_deny.set(dpp::p_manage_threads, dpp::p_create_public_threads, dpp::p_create_private_threads, dpp::p_send_messages);
+    forums.add_permission_overwrite(course_role.id, dpp::overwrite_type::ot_role, forums_allow, forums_deny);
 
-        dpp::permission forums_allow {};
-        dpp::permission forums_deny {};
+    dpp::confirmation_callback_t forums_callback = co_await bot->co_channel_create(forums);
+    if(forums_callback.is_error()) {
+        std::cout << "Error: " << forums_callback.get_error().message << std::endl;
+    }
+    forums = std::get<dpp::channel>(forums_callback.value);
+    tracked_course->forums_channel = static_cast<long>(forums.id);
 
-        forums_allow.set(dpp::p_send_messages_in_threads);
-        forums_deny.set(dpp::p_manage_threads, dpp::p_create_public_threads, dpp::p_create_private_threads, dpp::p_send_messages);
-        forums.add_permission_overwrite(role.id, dpp::overwrite_type::ot_role, forums_allow, forums_deny);
-
-        bot->channel_create(forums, [&](auto &callback) {
-            if (callback.is_error()) {
-                std::cout << "Error: " << callback.get_error().message << std::endl;
-            }
-
-            dpp::channel forums = std::get<dpp::channel>(callback.value);
-            tracked_course->forums_channel = static_cast<long>(forums.id);
-
-            handle_callback(callback.is_error());
-        });
-    });
-
-    std::unique_lock<std::mutex> lock(mtx);
-    cv.wait(lock, [&completedCallbacks]() { return completedCallbacks == 4; });
+    tracked_courses.push_back(tracked_course);
+    std::cout << "Tracked Courses Size: " << tracked_courses.size() << std::endl;
 }
 
 void Guild::remove_tracked_course(const std::shared_ptr<TrackedCourse> &tracked_course) {
@@ -235,25 +192,26 @@ std::vector<Guild> Guild::get_tracking_guilds(Course &course) {
 }
 
 void Guild::update() {
-    std::vector<long> to_add {};
+    std::vector<long> to_add{};
 
-    std::vector<std::shared_ptr<TrackedCourse>> active_courses {tracked_courses};
-    std::vector<long> active_users {verified_users};
+    std::vector<std::shared_ptr<TrackedCourse>> active_courses{tracked_courses};
+    std::vector<long> active_users{verified_users};
 
-    for(const auto &user_id : active_users) {
-        std::shared_ptr<User> user {nullptr};
+    for (const auto &user_id: active_users) {
+        std::shared_ptr<User> user{nullptr};
 
         try {
             user = User::get_user(user_id);
-        } catch(const DocumentNotFoundException &ex) {
-            verified_users.erase(std::remove(verified_users.begin(), verified_users.end(), user_id), verified_users.end());
+        } catch (const DocumentNotFoundException &ex) {
+            verified_users.erase(std::remove(verified_users.begin(), verified_users.end(), user_id),
+                                 verified_users.end());
 
             continue;
         }
 
-        std::vector<long> user_courses {user->courses};
-        for(const auto &course : user_courses) {
-            try { Course::get_course(course); } catch(DocumentNotFoundException &ex) {
+        std::vector<long> user_courses{user->courses};
+        for (const auto &course: user_courses) {
+            try { Course::get_course(course); } catch (DocumentNotFoundException &ex) {
                 user->update();
                 update();
                 return;
@@ -261,14 +219,15 @@ void Guild::update() {
 
             bool course_found = false;
 
-            for(auto it = active_courses.begin(); it != active_courses.end();) {
+            for (auto it = active_courses.begin(); it != active_courses.end();) {
                 const auto &tracked_course = *it;
 
-                if(tracked_course->course_id == course) {
+                if (tracked_course->course_id == course) {
                     it = active_courses.erase(it);
 
-                    Course &course_object {*Course::get_course(course)};
-                    if(std::count(course_object.tracking_guilds.begin(), course_object.tracking_guilds.end(), guild_id) < 1) {
+                    Course &course_object{*Course::get_course(course)};
+                    if (std::count(course_object.tracking_guilds.begin(), course_object.tracking_guilds.end(),
+                                   guild_id) < 1) {
                         course_object.tracking_guilds.push_back(guild_id);
                         course_object.save();
                     }
@@ -279,19 +238,28 @@ void Guild::update() {
                 }
             }
 
-            if(!course_found) {
+            if (!course_found) {
                 to_add.push_back(course);
             }
         }
     }
 
-    for(const auto &tracked_course : active_courses) {
+    for(const auto &tracked_course: active_courses) {
         remove_tracked_course(tracked_course);
     }
 
-    for(const auto &course: to_add) add_tracked_course(course);
+    std::vector<dpp::task<void>> tasks;
 
-    verify_existence();
+    tasks.reserve(to_add.size());
+    for(const auto &course : to_add) {
+        tasks.emplace_back(this->add_tracked_course(course));
+    }
+
+    for(auto &task: tasks) [&]() -> dpp::job {
+            co_await task;
+    }();
+
+    [this]() -> dpp::job {co_await verify_existence();}();
 }
 
 void Guild::save() const {
@@ -371,37 +339,37 @@ bool Guild::is_registered(long guild_id) {
     return true;
 }
 
-void Guild::verify_existence() {
-    bot->roles_get(guild_id, [&](auto callback) {
-        if(callback.is_error()) {
-            deregister();
-            return;
-        }
+dpp::task<void> Guild::verify_existence() {
+    std::cout << "Verifying existence" << std::endl;
 
-        dpp::role_map role_map = std::get<dpp::role_map>(callback.value);
+    dpp::confirmation_callback_t roles_callback = co_await bot->co_roles_get(guild_id);
+    if(roles_callback.is_error()) {
+        deregister();
+        co_return;
+    }
 
-        if(role_map.find(verified_role_id) == role_map.end()) {
-            deregister();
-            return;
-        }
+    dpp::role_map role_map = std::get<dpp::role_map>(roles_callback.value);
 
-        auto active_courses {tracked_courses};
+    if(role_map.find(verified_role_id) == role_map.end()) {
+        deregister();
+        co_return;
+    }
 
-        for(const auto &course: active_courses) {
-            if(!course->verify_role_existence(role_map)) remove_tracked_course(course);
-        }
+    auto active_courses {tracked_courses};
 
-        bot->channels_get(guild_id, [&](auto callback) {
-            dpp::channel_map channel_map = std::get<dpp::channel_map>(callback.value);
+    for(const auto &course: active_courses) {
+        if(!course->verify_role_existence(role_map)) remove_tracked_course(course);
+    }
 
-            auto active_courses {tracked_courses};
-            for(const auto &course: active_courses) {
-                if(!course->verify_channel_existence(channel_map)) remove_tracked_course(course);
-            }
+    dpp::confirmation_callback_t channels_callback = co_await bot->co_channels_get(guild_id);
+    dpp::channel_map channel_map = std::get<dpp::channel_map>(channels_callback.value);
 
-            save();
-        });
-    });
+    for(const auto &course: active_courses) {
+        if(!course->verify_channel_existence(channel_map)) remove_tracked_course(course);
+    }
+
+    std::cout << "Saving: " << tracked_courses.size() << std::endl;
+    save();
 }
 
 void Guild::verify_user(long user_id) {
