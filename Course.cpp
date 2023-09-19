@@ -52,6 +52,7 @@ void Course::save() const {
 }
 
 dpp::task<void> Course::update(const std::string &override_token) {
+
     if(!is_active) {
         std::cout << "Inactive!" << std::endl;
         co_return;

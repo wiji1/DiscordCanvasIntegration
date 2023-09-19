@@ -87,7 +87,8 @@ dpp::task<void> User::update() {
         std::cout << course["name"] << " " << course["enrollment_term_id"] << std::endl;
 
         courses.push_back(course["id"]);
-        Course::get_or_create(course["id"], user_token);
+        Course &course_obj = {*Course::get_or_create(course["id"], user_token)};
+        co_await course_obj.update(user_token);
     }
 
     std::cout << "Saving User: " << name << std::endl;

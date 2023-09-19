@@ -35,7 +35,7 @@ public:
     static std::shared_ptr<Guild> &get_guild(long guild_id);
 
     dpp::task<void> update();
-    dpp::task<void> update_user(User &user);
+    dpp::task<void> update_user(User &user, bool verify);
     void save() const;
 
     static std::vector<Guild> get_tracking_guilds(Course &course);

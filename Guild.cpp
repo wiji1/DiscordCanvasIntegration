@@ -214,7 +214,7 @@ dpp::task<void> Guild::update() {
         for(const auto &course: user_courses) {
             std::cout << "Looking at course: " << course << std::endl;
             try { Course::get_course(course); } catch (DocumentNotFoundException &ex) {
-                update_user(*user);
+                [user, this]() -> dpp::job {co_await update_user(*user, false);}();
                 co_return;
             }
 
@@ -261,14 +261,15 @@ dpp::task<void> Guild::update() {
 
     //TODO: Possibly move save method outside of verify_existence
     //TODO: Ensure that guild cannot be deregistered during verification
-    //TODO: Test user updating if course is missing during verification
+    //TODO: Run some coroutines at the same time for fatser results
     co_await verify_existence();
 }
 
-dpp::task<void> Guild::update_user(User &user) {
+dpp::task<void> Guild::update_user(User &user, bool verify) {
     co_await user.update();
-    std::cout << "Updating user" << std::endl;
-    co_await update();
+    std::cout << "Updating user1" << std::endl;
+    if(verify) co_await verify_user(user.discord_id, false);
+    else co_await update();
 }
 
 void Guild::save() const {
@@ -390,8 +391,8 @@ dpp::task<void> Guild::verify_user(long user_id, bool create) {
             Course &course {*Course::get_course(course_id)};
             course.is_active = false;
         } catch(DocumentNotFoundException &ex) {
-            [&user]() -> dpp::job {co_await user.update();}();
-            verify_user(user_id, false);
+            std::cout << "Updating user2" << std::endl;
+            [&user, this]() -> dpp::job {co_await update_user(user, true);}();
             co_return;
         }
     }
