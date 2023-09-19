@@ -34,7 +34,7 @@ public:
     static void register_guild(long guild_id);
     static std::shared_ptr<Guild> &get_guild(long guild_id);
 
-    void update();
+    dpp::task<void> update();
     void save() const;
 
     static std::vector<Guild> get_tracking_guilds(Course &course);

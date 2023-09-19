@@ -191,13 +191,13 @@ std::vector<Guild> Guild::get_tracking_guilds(Course &course) {
     return guildsTrackingCourse;
 }
 
-void Guild::update() {
+dpp::task<void> Guild::update() {
     std::vector<long> to_add{};
 
     std::vector<std::shared_ptr<TrackedCourse>> active_courses{tracked_courses};
     std::vector<long> active_users{verified_users};
 
-    for (const auto &user_id: active_users) {
+    for(const auto &user_id: active_users) {
         std::shared_ptr<User> user{nullptr};
 
         try {
@@ -210,23 +210,23 @@ void Guild::update() {
         }
 
         std::vector<long> user_courses{user->courses};
-        for (const auto &course: user_courses) {
+        for(const auto &course: user_courses) {
             try { Course::get_course(course); } catch (DocumentNotFoundException &ex) {
                 user->update();
-                update();
-                return;
+                [this]() -> dpp::job {co_await update();}();
+                co_return;
             }
 
             bool course_found = false;
 
-            for (auto it = active_courses.begin(); it != active_courses.end();) {
+            for(auto it = active_courses.begin(); it != active_courses.end();) {
                 const auto &tracked_course = *it;
 
-                if (tracked_course->course_id == course) {
+                if(tracked_course->course_id == course) {
                     it = active_courses.erase(it);
 
                     Course &course_object{*Course::get_course(course)};
-                    if (std::count(course_object.tracking_guilds.begin(), course_object.tracking_guilds.end(),
+                    if(std::count(course_object.tracking_guilds.begin(), course_object.tracking_guilds.end(),
                                    guild_id) < 1) {
                         course_object.tracking_guilds.push_back(guild_id);
                         course_object.save();
@@ -255,11 +255,9 @@ void Guild::update() {
         tasks.emplace_back(this->add_tracked_course(course));
     }
 
-    for(auto &task: tasks) [&]() -> dpp::job {
-            co_await task;
-    }();
+    for(auto &task: tasks) co_await task;
 
-    [this]() -> dpp::job {co_await verify_existence();}();
+    co_await verify_existence();
 }
 
 void Guild::save() const {
@@ -386,7 +384,8 @@ void Guild::verify_user(long user_id) {
         }
     }
     verified_users.push_back(user_id);
-    update();
+
+    [this]() -> dpp::job {co_await update();}();
 
     for(const auto &course_id: user.courses) {
         for(const auto &tracked_course: tracked_courses) {
