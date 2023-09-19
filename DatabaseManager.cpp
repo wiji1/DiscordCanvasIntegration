@@ -116,6 +116,8 @@ void DatabaseManager::insert_user(const User &user) {
         courses_array_builder.append(bsoncxx::types::b_int64{course});
     }
 
+    std::cout << "User Name: " << user.name << std::endl;
+
     auto create_doc = make_document(
         kvp("_id", bsoncxx::types::b_int64{user.user_id}),
         kvp("token", user.user_token),

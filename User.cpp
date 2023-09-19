@@ -10,7 +10,7 @@ std::unordered_map<long, std::shared_ptr<User>> User::user_map;
 
 User::User(std::string user_token, long discord_id) :
     discord_id {discord_id}, user_token {std::move(user_token)} {
-    update();
+    [this]() -> dpp::job {co_await update();}();
 }
 
 User::User(long discord_id) : discord_id {discord_id} {
@@ -90,6 +90,8 @@ dpp::task<void> User::update() {
         courses.push_back(course["id"]);
         Course::get_or_create(course["id"], user_token);
     }
+
+    std::cout << "Saving User: " << name << std::endl;
     save();
 }
 

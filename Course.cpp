@@ -10,7 +10,7 @@
 std::unordered_map<long, std::shared_ptr<Course>> Course::course_map;
 
 Course::Course(long course_id, const std::string &access_token) : course_id {course_id} {
-    update(access_token);
+    [this, access_token]() -> dpp::job {co_await update(access_token);}();
 }
 
 Course::Course(long course_id) : course_id {course_id} {

@@ -198,6 +198,7 @@ dpp::task<void> Guild::update() {
     std::vector<long> active_users{verified_users};
 
     for(const auto &user_id: active_users) {
+        std::cout << "Looking at User: " << user_id << std::endl;
         std::shared_ptr<User> user{nullptr};
 
         try {
@@ -211,9 +212,9 @@ dpp::task<void> Guild::update() {
 
         std::vector<long> user_courses{user->courses};
         for(const auto &course: user_courses) {
+            std::cout << "Looking at course: " << course << std::endl;
             try { Course::get_course(course); } catch (DocumentNotFoundException &ex) {
-                user->update();
-                [this]() -> dpp::job {co_await update();}();
+                update_user(*user);
                 co_return;
             }
 
@@ -238,7 +239,8 @@ dpp::task<void> Guild::update() {
                 }
             }
 
-            if (!course_found) {
+            if(!course_found) {
+                std::cout << "Adding course " << course << " to to_add list" << std::endl;
                 to_add.push_back(course);
             }
         }
@@ -257,7 +259,16 @@ dpp::task<void> Guild::update() {
 
     for(auto &task: tasks) co_await task;
 
+    //TODO: Possibly move save method outside of verify_existence
+    //TODO: Ensure that guild cannot be deregistered during verification
+    //TODO: Find out ehy tracked courses arent added on initial verification, but are when user is already in database
     co_await verify_existence();
+}
+
+dpp::task<void> Guild::update_user(User &user) {
+    co_await user.update();
+    std::cout << "Updating user" << std::endl;
+    co_await update();
 }
 
 void Guild::save() const {
@@ -378,13 +389,13 @@ void Guild::verify_user(long user_id) {
             Course &course {*Course::get_course(course_id)};
             course.is_active = false;
         } catch(DocumentNotFoundException &ex) {
-            user.update();
+            [&user]() -> dpp::job {co_await user.update();}();
             verify_user(user_id);
             return;
         }
     }
     verified_users.push_back(user_id);
-
+    std::cout << "User courses size: " << user.courses.size() << std::endl;
     [this]() -> dpp::job {co_await update();}();
 
     for(const auto &course_id: user.courses) {
