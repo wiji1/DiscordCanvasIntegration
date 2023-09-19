@@ -261,7 +261,7 @@ dpp::task<void> Guild::update() {
 
     //TODO: Possibly move save method outside of verify_existence
     //TODO: Ensure that guild cannot be deregistered during verification
-    //TODO: Find out ehy tracked courses arent added on initial verification, but are when user is already in database
+    //TODO: Test user updating if course is missing during verification
     co_await verify_existence();
 }
 
@@ -381,8 +381,9 @@ dpp::task<void> Guild::verify_existence() {
     save();
 }
 
-void Guild::verify_user(long user_id) {
+dpp::task<void> Guild::verify_user(long user_id, bool create) {
     User &user {*User::get_user(user_id)};
+    if(create) co_await user.update();
 
     for(const auto &course_id: user.courses) {
         try {
@@ -390,13 +391,14 @@ void Guild::verify_user(long user_id) {
             course.is_active = false;
         } catch(DocumentNotFoundException &ex) {
             [&user]() -> dpp::job {co_await user.update();}();
-            verify_user(user_id);
-            return;
+            verify_user(user_id, false);
+            co_return;
         }
     }
+
     verified_users.push_back(user_id);
     std::cout << "User courses size: " << user.courses.size() << std::endl;
-    [this]() -> dpp::job {co_await update();}();
+    co_await update();
 
     for(const auto &course_id: user.courses) {
         for(const auto &tracked_course: tracked_courses) {

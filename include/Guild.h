@@ -26,7 +26,7 @@ public:
     dpp::task<void> add_tracked_course(long course_id);
     void remove_tracked_course(const std::shared_ptr<TrackedCourse>& tracked_course);
     dpp::task<void> verify_existence();
-    void verify_user(long user_id);
+    dpp::task<void> verify_user(long user_id, bool create);
     void create_verified_role();
     void deregister();
     bool is_tracking(const Course &course);

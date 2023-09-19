@@ -10,7 +10,6 @@ std::unordered_map<long, std::shared_ptr<User>> User::user_map;
 
 User::User(std::string user_token, long discord_id) :
     discord_id {discord_id}, user_token {std::move(user_token)} {
-    [this]() -> dpp::job {co_await update();}();
 }
 
 User::User(long discord_id) : discord_id {discord_id} {

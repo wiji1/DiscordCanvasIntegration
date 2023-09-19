@@ -79,7 +79,7 @@ int main() {
             }
 
             event.reply("Successfully Verified!");
-            guild.verify_user(user->discord_id);
+            [&user, &guild]() -> dpp::job {co_await guild.verify_user(user->discord_id, false);}();
         }
 
         if(event.command.get_command_name() == "test") {
@@ -151,7 +151,9 @@ int main() {
         User &user {*User::create_user(v, static_cast<long>(event.command.get_issuing_user().id))};
 
         Guild &guild = *Guild::get_guild(event.command.guild_id);
-        guild.verify_user(user.discord_id);
+
+        [&user, &guild]() -> dpp::job {co_await guild.verify_user(user.discord_id, true);}();
+
     });
 
     bot->start(dpp::st_wait);
