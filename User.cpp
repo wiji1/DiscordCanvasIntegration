@@ -72,6 +72,10 @@ dpp::task<void> User::update() {
         if(term_id > term_id_of_most_recent) term_id_of_most_recent = term_id;
     }
 
+    std::vector<dpp::task<void>> tasks;
+    tasks.reserve(courses_data.size());
+    std::cout << "Course Data size: " << courses_data.size() << std::endl;
+
     for(const auto &course : courses_data) {
         if (!course.contains("id") || !course.contains("enrollment_term_id")) {
             continue;
@@ -88,8 +92,9 @@ dpp::task<void> User::update() {
 
         courses.push_back(course["id"]);
         Course &course_obj = {*Course::get_or_create(course["id"], user_token)};
-        co_await course_obj.update(user_token);
+        tasks.emplace_back(course_obj.update(user_token));
     }
+    for(auto &task: tasks) co_await task;
 
     std::cout << "Saving User: " << name << std::endl;
     save();
