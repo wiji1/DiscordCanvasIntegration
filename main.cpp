@@ -78,8 +78,14 @@ int main() {
                 return;
             }
 
-            event.reply("Successfully Verified!");
-            [&user, &guild]() -> dpp::job {co_await guild.verify_user(user->discord_id, false);}();
+            [&user, &guild, &event]() -> dpp::job {
+                event.co_thinking();
+                co_await guild.verify_user(user->discord_id, false);
+                std::cout << "1.3" << std::endl;
+                dpp::message message = {"Successfully Verified!"};
+                event.co_edit_original_response(message);
+                std::cout << "1.4" << std::endl;
+            }();
         }
 
         if(event.command.get_command_name() == "test") {
@@ -145,15 +151,15 @@ int main() {
             return;
         }
 
-        m.set_content("You entered: " + v).set_flags(dpp::m_ephemeral);
-        event.reply(m);
+//        m.set_content("You entered: " + v).set_flags(dpp::m_ephemeral);
+
 
         User &user {*User::create_user(v, static_cast<long>(event.command.get_issuing_user().id))};
 
         Guild &guild = *Guild::get_guild(event.command.guild_id);
 
         [&user, &guild]() -> dpp::job {co_await guild.verify_user(user.discord_id, true);}();
-
+        event.reply("Successfully Verified!");
     });
 
     bot->start(dpp::st_wait);
