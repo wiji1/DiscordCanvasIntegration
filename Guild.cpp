@@ -261,7 +261,7 @@ dpp::task<void> Guild::update() {
 
     //TODO: Possibly move save method outside of verify_existence
     //TODO: Ensure that guild cannot be deregistered during verification
-    //TODO: Run some coroutines at the same time for fatser results
+    //TODO: Revisit updating courses during verification (New and Existing courses)
     co_await verify_existence();
 }
 
