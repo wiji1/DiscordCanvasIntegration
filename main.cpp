@@ -33,10 +33,10 @@ int main() {
         }
     });
 
-    bot->on_slashcommand([](const dpp::slashcommand_t & event)   {
+    bot->on_slashcommand([](const dpp::slashcommand_t &event)   {
         if(event.command.get_command_name() == "verify") {
             if(!Guild::is_registered(static_cast<long>(event.command.guild_id))) {
-                event.reply("This guild is not registered!");
+                event.edit_response("This guild is not registered!");
                 return;
             }
 
@@ -44,7 +44,8 @@ int main() {
 
             try {
                 user = User::get_user(static_cast<long>(event.command.usr.id));
-            } catch (const DocumentNotFoundException &ex) {
+                event.thinking(true);
+            } catch(const DocumentNotFoundException &ex) {
                 dpp::interaction_modal_response modal("verification-form", "We need the following information from you");
                 modal.add_component(
                         dpp::component().
@@ -74,20 +75,16 @@ int main() {
             Guild &guild {*Guild::get_guild(static_cast<long>(event.command.guild_id))};
 
             if(std::find(guild.verified_users.begin(), guild.verified_users.end(), user->discord_id)!= guild.verified_users.end()) {
-                event.reply("You are already verified!");
+                event.edit_response("You are already verified!");
                 return;
             }
 
-            long guild_id {guild.guild_id};
-            [user, guild_id, event]() -> dpp::job {
-                co_await event.co_thinking();
-                Guild &guild = {*Guild::get_guild(guild_id)};
-                co_await guild.verify_user(user->discord_id, false);
-                std::cout << "1.3" << std::endl;
-//                dpp::message message = {"Successfully Verified!"};
-//                co_await event.co_edit_response("message");
-                std::cout << "1.4" << std::endl;
-            }();
+            [](User u, long gid, dpp::slashcommand_t e) -> dpp::job {
+                Guild &guild = {*Guild::get_guild(gid)};
+                co_await guild.verify_user(u.discord_id, false);
+                dpp::message message = {"Successfully Verified!"};
+                co_await e.co_edit_response(message);
+            }(*user, guild.guild_id, event);
         }
 
         if(event.command.get_command_name() == "test") {
@@ -100,7 +97,7 @@ int main() {
         }
 
         if(event.command.get_command_name() == "ping") {
-            event.reply("Pong!");
+            event.edit_response("Pong!");
         }
 
         if(event.command.get_command_name() == "setup") {
@@ -149,19 +146,25 @@ int main() {
 
         if(!Guild::is_registered(event.command.guild_id)) {
             m.set_content("This guild is not registered!").set_flags(dpp::m_ephemeral);
-            event.reply(m);
+            event.edit_response(m);
             return;
         }
 
-//        m.set_content("You entered: " + v).set_flags(dpp::m_ephemeral);
-
+        m.set_content("You entered: " + v).set_flags(dpp::m_ephemeral);
+        event.thinking(true);
 
         User &user {*User::create_user(v, static_cast<long>(event.command.get_issuing_user().id))};
 
         Guild &guild = *Guild::get_guild(event.command.guild_id);
 
-        [&user, &guild]() -> dpp::job {co_await guild.verify_user(user.discord_id, true);}();
-        event.reply("Successfully Verified!");
+//        [&user, &guild]() -> dpp::job {co_await guild.verify_user(user.discord_id, true);}();
+
+        [](User u, long gid, dpp::form_submit_t e) -> dpp::job {
+            Guild &guild = {*Guild::get_guild(gid)};
+            co_await guild.verify_user(u.discord_id, true);
+            dpp::message message = {"Successfully Verified!"};
+            co_await e.co_edit_response(message);
+        }(user, guild.guild_id, event);
     });
 
     bot->start(dpp::st_wait);
