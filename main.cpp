@@ -78,12 +78,14 @@ int main() {
                 return;
             }
 
-            [&user, &guild, &event]() -> dpp::job {
-                event.co_thinking();
+            long guild_id {guild.guild_id};
+            [user, guild_id, event]() -> dpp::job {
+                co_await event.co_thinking();
+                Guild &guild = {*Guild::get_guild(guild_id)};
                 co_await guild.verify_user(user->discord_id, false);
                 std::cout << "1.3" << std::endl;
-                dpp::message message = {"Successfully Verified!"};
-                event.co_edit_original_response(message);
+//                dpp::message message = {"Successfully Verified!"};
+//                co_await event.co_edit_response("message");
                 std::cout << "1.4" << std::endl;
             }();
         }

@@ -262,7 +262,13 @@ dpp::task<void> Guild::update() {
     //TODO: Possibly move save method outside of verify_existence
     //TODO: Ensure that guild cannot be deregistered during verification
     //TODO: Revisit updating courses during verification (New and Existing courses)
+    //TODO: Fix is_active check on courses when they are being added, they are currently fine when being tracked while they already exist in the database.
     co_await verify_existence();
+
+    for(const auto &course_id: to_add) {
+        Course &course {*Course::get_course(course_id)};
+        course.is_active = true;
+    }
 }
 
 dpp::task<void> Guild::update_user(User &user, bool verify) {
