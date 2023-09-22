@@ -36,7 +36,7 @@ int main() {
     bot->on_slashcommand([](const dpp::slashcommand_t &event)   {
         if(event.command.get_command_name() == "verify") {
             if(!Guild::is_registered(static_cast<long>(event.command.guild_id))) {
-                event.edit_response("This guild is not registered!");
+                event.reply("This guild is not registered!");
                 return;
             }
 

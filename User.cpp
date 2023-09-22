@@ -92,7 +92,6 @@ dpp::task<void> User::update() {
 
         courses.push_back(course["id"]);
         Course &course_obj = {*Course::get_or_create(course["id"], user_token)};
-        course_obj.is_active = false;
         tasks.emplace_back(course_obj.update(user_token));
     }
     for(auto &task: tasks) co_await task;
