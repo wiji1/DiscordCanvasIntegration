@@ -264,7 +264,7 @@ dpp::task<void> Guild::update() {
     //TODO: Revisit updating courses during verification (New and Existing courses)
     //TODO: Fix is_active check on courses when they are being added, they are currently fine when being tracked while they already exist in the database.
     //TODO: Filter forum response
-    //TODO: If registering new courses, verify command responds instantly. Likely due to coroutone responding instantly.
+    //TODO: If registering new courses, verify command responds instantly. Likely due to coroutone responding instantly
     co_await verify_existence();
 
     for(const auto &course_id: to_add) {
