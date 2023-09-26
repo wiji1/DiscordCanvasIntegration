@@ -5,7 +5,6 @@
 
 class Misc {
 public:
-    static long string_to_time(const std::string &string);
 };
 
 
