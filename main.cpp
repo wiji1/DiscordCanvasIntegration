@@ -97,7 +97,7 @@ int main() {
         }
 
         if(event.command.get_command_name() == "ping") {
-            event.edit_response("Pong!");
+            event.reply("Pong!");
         }
 
         if(event.command.get_command_name() == "setup") {

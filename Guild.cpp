@@ -264,7 +264,6 @@ dpp::task<void> Guild::update() {
     //TODO: Revisit updating courses during verification (New and Existing courses)
     //TODO: Fix is_active check on courses when they are being added, they are currently fine when being tracked while they already exist in the database.
     //TODO: Filter forum response
-    //TODO: If registering new courses, verify command responds instantly. Likely due to coroutone responding instantly
     co_await verify_existence();
 
     for(const auto &course_id: to_add) {
@@ -395,18 +394,18 @@ dpp::task<void> Guild::verify_user(long user_id, bool create) {
     if(create) co_await user.update();
 
     for(const auto &course_id: user.courses) {
+        bool fail = false;
         try {
             Course &course {*Course::get_course(course_id)};
             course.is_active = false;
         } catch(DocumentNotFoundException &ex) {
+          fail = true;
+        }
+
+        if(fail) {
             std::cout << "Updating user2" << std::endl;
-
-            User *user_ptr = &user;
-            [](User *u, Guild *g) -> dpp::job {
-                co_await g->update_user(*u, true);
-                std::cout << "Returning" << std::endl;
-            }(user_ptr, this);
-
+            co_await update_user(user, true);
+            std::cout << "Returning" << std::endl;
             co_return;
         }
     }
