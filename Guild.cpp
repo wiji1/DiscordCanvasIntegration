@@ -403,9 +403,7 @@ dpp::task<void> Guild::verify_user(long user_id, bool create) {
         }
 
         if(fail) {
-            std::cout << "Updating user2" << std::endl;
             co_await update_user(user, true);
-            std::cout << "Returning" << std::endl;
             co_return;
         }
     }

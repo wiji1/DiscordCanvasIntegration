@@ -23,7 +23,7 @@ public:
     void remove() const;
     User &find_accessor();
 
-    static std::shared_ptr<Course> &get_or_create(long course_id, const std::string& access_token);
+    static dpp::task<std::shared_ptr<Course>> get_or_create(long course_id, const std::string& access_token);
     static std::shared_ptr<Course> &get_course(long course_id);
 
     explicit Course(long course_id, const std::string& access_token);

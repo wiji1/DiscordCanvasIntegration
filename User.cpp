@@ -91,8 +91,8 @@ dpp::task<void> User::update() {
         std::cout << course["name"] << " " << course["enrollment_term_id"] << std::endl;
 
         courses.push_back(course["id"]);
-        Course &course_obj = {*Course::get_or_create(course["id"], user_token)};
-        tasks.emplace_back(course_obj.update(user_token));
+        auto course_obj = co_await Course::get_or_create(course["id"], user_token);
+        tasks.emplace_back(course_obj->update(user_token));
     }
     for(auto &task: tasks) co_await task;
 

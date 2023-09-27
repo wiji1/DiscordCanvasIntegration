@@ -10,7 +10,7 @@
 std::unordered_map<long, std::shared_ptr<Course>> Course::course_map;
 
 Course::Course(long course_id, const std::string &access_token) : course_id {course_id} {
-    [this, access_token]() -> dpp::job {co_await update(access_token);}();
+
 }
 
 Course::Course(long course_id) : course_id {course_id} {
@@ -186,13 +186,19 @@ User &Course::find_accessor() {
 }
 
 
-std::shared_ptr<Course> &Course::get_or_create(long course_id, const std::string &access_token) {
+dpp::task<std::shared_ptr<Course>> Course::get_or_create(long course_id, const std::string &access_token) {
     try {
-        return get_course(course_id);
+        co_return get_course(course_id);
     } catch(DocumentNotFoundException &ignored) { }
 
-    course_map[course_id] = std::make_unique<Course>(course_id, access_token);
-    return course_map[course_id];
+    std::cout << "Creating Course: " << course_id << std::endl;
+    std::shared_ptr<Course> ptr = std::make_shared<Course>(course_id, access_token);
+    co_await ptr->update(access_token);
+    course_map[course_id] = ptr;
+
+//    course_map[course_id] = std::make_unique<Course>(course_id, access_token);
+    std::cout << "Created Course: " << course_id << std::endl;
+    co_return course_map[course_id];
 }
 
 std::shared_ptr<Course> &Course::get_course(long course_id) {
