@@ -316,6 +316,7 @@ std::shared_ptr<Guild> &Guild::get_guild(long guild_id) {
 }
 
 void Guild::deregister() {
+    std::cout << "Desregistering" << std::endl;
     auto active_courses {tracked_courses};
     for(const auto &course: active_courses) {
         remove_tracked_course(course);
@@ -362,6 +363,7 @@ dpp::task<void> Guild::verify_existence() {
 
     dpp::confirmation_callback_t roles_callback = co_await bot->co_roles_get(guild_id);
     if(roles_callback.is_error()) {
+        std::cout << "de1" << std::endl;
         deregister();
         co_return;
     }
@@ -369,6 +371,7 @@ dpp::task<void> Guild::verify_existence() {
     dpp::role_map role_map = std::get<dpp::role_map>(roles_callback.value);
 
     if(role_map.find(verified_role_id) == role_map.end()) {
+        std::cout << "de2" << std::endl;
         deregister();
         co_return;
     }
@@ -399,7 +402,7 @@ dpp::task<void> Guild::verify_user(long user_id, bool create) {
         bool fail = false;
         try {
             Course &course {*Course::get_course(course_id)};
-//            course.is_active = false;
+            course.is_active = false;
         } catch(DocumentNotFoundException &ex) {
           fail = true;
         }
@@ -420,7 +423,7 @@ dpp::task<void> Guild::verify_user(long user_id, bool create) {
 
             bot->guild_member_add_role(guild_id, user_id, tracked_course->role_id, [&](auto &callback) {
                 Course &course {*Course::get_course(course_id)};
-//                course.is_active = true;
+                course.is_active = true;
             });
         }
     }
