@@ -54,13 +54,12 @@ void Course::save() const {
 dpp::task<void> Course::update(const std::string &override_token, bool override) {
     if((!is_active || is_updating) && !override) {
         std::cout << "Inactive!" << " " << is_updating << " " << is_active << std::endl;
-        //TODO: After cleanup is ran, is_updating is still true. Likely an issue with removing is_updating
+        //TODO: After cleanup is ran, is_updating is still true. Likely an issue with removing is_updating. /test command sets
+        //TODO: is_updating to true for all courses, yet the ones that arent removed dont make it through this method.
         co_return;
     }
 
     is_updating = true;
-
-//    std::cout << "Active!" << std::endl;
 
     std::string accessor_token {override_token};
     try {
@@ -125,7 +124,7 @@ dpp::task<void> Course::update(const std::string &override_token, bool override)
             recent_announcements.push_back(id);
         }
 
-        for (const auto &item: recent_announcements) {
+        for(const auto &item: recent_announcements) {
             bool found{false};
             for (const auto &announcement: announcement_data) {
                 int id = {announcement["id"]};
@@ -203,7 +202,6 @@ dpp::task<std::shared_ptr<Course>> Course::get_or_create(long course_id, const s
     std::shared_ptr<Course> ptr = std::make_shared<Course>(course_id, access_token);
     if(suspend) {
         ptr->is_active = false;
-        std::cout << "Setting active to false" << std::endl;
     }
     co_await ptr->update(access_token, suspend);
     course_map[course_id] = ptr;

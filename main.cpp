@@ -92,7 +92,11 @@ int main() {
             for(const auto &item: user.courses) {
                 try {
                     Course &course {*Course::get_course(item)};
-                    course.update();
+
+                    [](Course *c) -> dpp::job {
+                        co_await c->update();
+                    }(&course);
+
                 } catch(DocumentNotFoundException &ex) { }
             }
 
