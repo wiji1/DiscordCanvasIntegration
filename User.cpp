@@ -91,7 +91,7 @@ dpp::task<void> User::update(bool suspend) {
         std::cout << course["name"] << " " << course["enrollment_term_id"] << std::endl;
 
         courses.push_back(course["id"]);
-        auto course_obj = co_await Course::get_or_create(course["id"], user_token, suspend);
+        auto course_obj = co_await  Course::get_or_create(course["id"], user_token, suspend);
 //        if(suspend) course_obj->is_active = false;
         tasks.emplace_back(course_obj->update(user_token));
     }

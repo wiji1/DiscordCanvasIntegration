@@ -53,7 +53,8 @@ void Course::save() const {
 
 dpp::task<void> Course::update(const std::string &override_token, bool override) {
     if((!is_active || is_updating) && !override) {
-        std::cout << "Inactive!" << std::endl;
+        std::cout << "Inactive!" << " " << is_updating << " " << is_active << std::endl;
+        //TODO: After cleanup is ran, is_updating is still true. Likely an issue with removing is_updating
         co_return;
     }
 
@@ -81,58 +82,62 @@ dpp::task<void> Course::update(const std::string &override_token, bool override)
     course_id = {course_data["id"]};
     name = {course_data["course_code"]};
 
-    std::string assignment_response = co_await CanvasAPI::get_assignments(course_id, accessor_token);
-    std::stringstream assignment_stream {assignment_response};
-    nlohmann::json assignment_data;
-    assignment_stream >> assignment_data;
+    try {
+        std::string assignment_response = co_await CanvasAPI::get_assignments(course_id, accessor_token);
+        std::stringstream assignment_stream{assignment_response};
+        nlohmann::json assignment_data;
+        assignment_stream >> assignment_data;
 
-    for(const auto &assignment : assignment_data) {
-        int id = {assignment["id"]};
-
-        if(std::count(recent_assignments.begin(), recent_assignments.end(), id)) continue;
-        //TODO: Post Assignment to channels
-        std::cout << "Posting Assignment: " << id << std::endl;
-
-        recent_assignments.push_back(id);
-    }
-
-    for(const auto &item: recent_assignments) {
-        bool found {false};
-        for(const auto &assignment: assignment_data) {
+        for (const auto &assignment: assignment_data) {
             int id = {assignment["id"]};
-            if(item == id) {
-                found = true;
-                break;
-            }
+
+            if (std::count(recent_assignments.begin(), recent_assignments.end(), id)) continue;
+            //TODO: Post Assignment to channels
+            std::cout << "Posting Assignment: " << id << std::endl;
+
+            recent_assignments.push_back(id);
         }
-        if(!found) std::remove(recent_assignments.begin(), recent_assignments.end(), item);
-    }
 
-    std::string announcement_response = co_await CanvasAPI::get_announcements(course_id, accessor_token);
-    std::stringstream announcement_stream {announcement_response};
-    nlohmann::json announcement_data;
-    announcement_stream >> announcement_data;
+        for(const auto &item: recent_assignments) {
+            bool found{false};
+            for (const auto &assignment: assignment_data) {
+                int id = {assignment["id"]};
+                if (item == id) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) std::remove(recent_assignments.begin(), recent_assignments.end(), item);
+        }
 
-    for(const auto &announcement : announcement_data) {
-        int id = {announcement["id"]};
+        std::string announcement_response = co_await CanvasAPI::get_announcements(course_id, accessor_token);
+        std::stringstream announcement_stream{announcement_response};
+        nlohmann::json announcement_data;
+        announcement_stream >> announcement_data;
 
-        if(std::count(recent_announcements.begin(), recent_announcements.end(), id)) continue;
-        //TODO: Post announcements to channels
-        std::cout << "Posting Announcement: " << id << std::endl;
-
-        recent_announcements.push_back(id);
-    }
-
-    for(const auto &item: recent_announcements) {
-        bool found {false};
         for(const auto &announcement: announcement_data) {
             int id = {announcement["id"]};
-            if(item == id) {
-                found = true;
-                break;
-            }
+
+            if (std::count(recent_announcements.begin(), recent_announcements.end(), id)) continue;
+            //TODO: Post announcements to channels
+            std::cout << "Posting Announcement: " << id << std::endl;
+
+            recent_announcements.push_back(id);
         }
-        if(!found) std::remove(recent_announcements.begin(), recent_announcements.end(), item);
+
+        for (const auto &item: recent_announcements) {
+            bool found{false};
+            for (const auto &announcement: announcement_data) {
+                int id = {announcement["id"]};
+                if (item == id) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) std::remove(recent_announcements.begin(), recent_announcements.end(), item);
+        }
+    } catch(nlohmann::detail::parse_error &ex) {
+        std::cout << ex.what() << std::endl;
     }
 
     save();
