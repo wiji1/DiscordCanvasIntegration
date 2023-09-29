@@ -20,7 +20,7 @@ public:
     static std::shared_ptr<User> &create_user(std::string user_token, long discord_id);
     static std::shared_ptr<User> &get_user(long discord_id);
 
-    dpp::task<void> update();
+    dpp::task<void> update(bool suspend = false);
     void save() const;
 
     explicit User(std::string user_token, long discord_id);

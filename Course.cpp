@@ -51,13 +51,15 @@ void Course::save() const {
     DatabaseManager::update_course(*this);
 }
 
-dpp::task<void> Course::update(const std::string &override_token) {
-
-    if(!is_active) {
+dpp::task<void> Course::update(const std::string &override_token, bool override) {
+    if((!is_active || is_updating) && !override) {
         std::cout << "Inactive!" << std::endl;
         co_return;
     }
-    std::cout << "Active!" << std::endl;
+
+    is_updating = true;
+
+//    std::cout << "Active!" << std::endl;
 
     std::string accessor_token {override_token};
     try {
@@ -66,7 +68,7 @@ dpp::task<void> Course::update(const std::string &override_token) {
         if(accessor_token.empty()) accessor_token = {find_accessor().user_token};
     } catch(AccessorNotFoundException &ex) {
         remove();
-        std::cout << "Removing course" << std::endl;
+        std::cout << "Removing course: " << course_id << " " << is_updating << " " << is_active << std::endl;
 
         co_return;
     }
@@ -134,6 +136,7 @@ dpp::task<void> Course::update(const std::string &override_token) {
     }
 
     save();
+    is_updating = false;
 
     //Changed this handling to happen within Guild object
 //    std::vector<Guild> guild_list {Guild::get_tracking_guilds(*this)};
@@ -186,14 +189,18 @@ User &Course::find_accessor() {
 }
 
 
-dpp::task<std::shared_ptr<Course>> Course::get_or_create(long course_id, const std::string &access_token) {
+dpp::task<std::shared_ptr<Course>> Course::get_or_create(long course_id, const std::string &access_token, bool suspend) {
     try {
         co_return get_course(course_id);
     } catch(DocumentNotFoundException &ignored) { }
 
     std::cout << "Creating Course: " << course_id << std::endl;
     std::shared_ptr<Course> ptr = std::make_shared<Course>(course_id, access_token);
-    co_await ptr->update(access_token);
+    if(suspend) {
+        ptr->is_active = false;
+        std::cout << "Setting active to false" << std::endl;
+    }
+    co_await ptr->update(access_token, suspend);
     course_map[course_id] = ptr;
 
 //    course_map[course_id] = std::make_unique<Course>(course_id, access_token);

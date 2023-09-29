@@ -273,7 +273,8 @@ dpp::task<void> Guild::update() {
 }
 
 dpp::task<void> Guild::update_user(User &user, bool verify) {
-    co_await user.update();
+    std::cout << "Verify status: " << verify << std::endl;
+    co_await user.update(true);
     std::cout << "Updating user1" << std::endl;
     if(verify) co_await verify_user(user.discord_id, false);
     else co_await update();
@@ -392,12 +393,13 @@ dpp::task<void> Guild::verify_existence() {
 dpp::task<void> Guild::verify_user(long user_id, bool create) {
     User &user {*User::get_user(user_id)};
     if(create) co_await user.update();
+    //TODO: Potential double update
 
     for(const auto &course_id: user.courses) {
         bool fail = false;
         try {
             Course &course {*Course::get_course(course_id)};
-            course.is_active = false;
+//            course.is_active = false;
         } catch(DocumentNotFoundException &ex) {
           fail = true;
         }
@@ -418,7 +420,7 @@ dpp::task<void> Guild::verify_user(long user_id, bool create) {
 
             bot->guild_member_add_role(guild_id, user_id, tracked_course->role_id, [&](auto &callback) {
                 Course &course {*Course::get_course(course_id)};
-                course.is_active = true;
+//                course.is_active = true;
             });
         }
     }

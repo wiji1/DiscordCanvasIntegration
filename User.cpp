@@ -38,7 +38,7 @@ void User::save() const {
     DatabaseManager::update_user(*this);
 }
 
-dpp::task<void> User::update() {
+dpp::task<void> User::update(bool suspend) {
     std::string user_response = co_await CanvasAPI::get_user_profile(user_token);
     std::stringstream profile_stream {user_response};
     nlohmann::json profile_data;
@@ -91,7 +91,8 @@ dpp::task<void> User::update() {
         std::cout << course["name"] << " " << course["enrollment_term_id"] << std::endl;
 
         courses.push_back(course["id"]);
-        auto course_obj = co_await Course::get_or_create(course["id"], user_token);
+        auto course_obj = co_await Course::get_or_create(course["id"], user_token, suspend);
+//        if(suspend) course_obj->is_active = false;
         tasks.emplace_back(course_obj->update(user_token));
     }
     for(auto &task: tasks) co_await task;

@@ -90,8 +90,10 @@ int main() {
         if(event.command.get_command_name() == "test") {
             User &user {*User::get_user(static_cast<long>(event.command.usr.id))};
             for(const auto &item: user.courses) {
-                Course &course {*Course::get_course(item)};
-                course.update();
+                try {
+                    Course &course {*Course::get_course(item)};
+                    course.update();
+                } catch(DocumentNotFoundException &ex) { }
             }
 
         }
