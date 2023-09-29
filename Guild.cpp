@@ -260,9 +260,8 @@ dpp::task<void> Guild::update() {
     for(auto &task: tasks) co_await task;
 
     //TODO: Possibly move save method outside of verify_existence
-    //TODO: Ensure that guild cannot be deregistered during verification
-    //TODO: Revisit updating courses during verification (New and Existing courses)
-    //TODO: Fix is_active check on courses when they are being added, they are currently fine when being tracked while they already exist in the database.
+    //TODO: Ensure that guild cannot be deregistered during verification (Coroutines will have to be canceled)
+
     //TODO: Filter forum response
     co_await verify_existence();
 
