@@ -54,8 +54,6 @@ void Course::save() const {
 dpp::task<void> Course::update(const std::string &override_token, bool override) {
     if((!is_active || is_updating) && !override) {
         std::cout << "Inactive!" << " " << is_updating << " " << is_active << std::endl;
-        //TODO: After cleanup is ran, is_updating is still true. Likely an issue with removing is_updating. /test command sets
-        //TODO: is_updating to true for all courses, yet the ones that arent removed dont make it through this method.
         co_return;
     }
 
