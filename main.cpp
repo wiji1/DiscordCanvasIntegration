@@ -88,17 +88,50 @@ int main() {
         }
 
         if(event.command.get_command_name() == "test") {
-            User &user {*User::get_user(static_cast<long>(event.command.usr.id))};
-            for(const auto &item: user.courses) {
-                try {
-                    Course &course {*Course::get_course(item)};
 
-                    [](Course *c) -> dpp::job {
-                        co_await c->update();
-                    }(&course);
+            dpp::embed embed = dpp::embed().
+                    set_color(dpp::colors::red).
+                    set_title("CELLOBRATION 2023 is HERE at ASA on Saturday, November 4th - COME JOIN THE FUN!").
+                    set_url("https://goasa.instructure.com/courses/5218/discussion_topics/33521").
+                    add_field(
+                    "Content:",
+                    "Hello AZ Cellists!\n"
+                    "The Cellobration 2023 team hit the road and found our new home at Arizona School for the Arts. We can't wait to see you again and celebrate OUR CELLO COMMUNITY!\n"
+                    "Register by Saturday, October 7th to ensure that you receive the right T-shirt size.\n"
+                    "Here are the details:\n"
+                    "When is it you ask? Saturday, November 4, 2023\n"
+                    "Where is it located? Arizona School for the Arts Links to an external site.\n"
+                    "Will EVERYONE receive a T-shirt? YES - register by 10/7/23 to ensure that you get the correct size.\n"
+                    "Will there be an Audition Prep Workshop? YES (this year, like last year, it is after the conclusion of our 1:30pm concert)\n"
+                    "We have added a \"Shooting Stars\" session for our young cellists, ages 4-7.\n"
+                    "Will we wear masks indoors? Masks are optional, HOWEVER, if the metrics for the community warrant the wearing of masks, YES, yes we will! This will be reviewed as we get closer to the date.\n"
+                    "What about the ACS Cello Competition? YES! It will take place on Friday, November 3rd\n"
+                    "Sign up by October 7th to secure your T-shirt size!\n"
+                    "How do you find out more? Visit:\n"
+                    "http://www.cellobrationaz.com Links to an external site.  AND/OR \n"
+                    "Cellobration 2023 Information Links to an external site. and\n"
+                    "Arizona Cello Society Competition 2023 Links to an external site.\n"
+                    "We can't wait to see and hear you. Register Links to an external site. today!"
+            ).
+                    set_footer(dpp::embed_footer().set_text("Message")).
+                    set_timestamp(time(nullptr));
 
-                } catch(DocumentNotFoundException &ex) { }
-            }
+            dpp::channel channel = event.command.channel;
+            bot->message_create(dpp::message(event.command.channel_id, embed).set_reference(event.command.id).set_channel_id(channel.id));
+
+//            event.reply(dpp::message(event.command.channel_id, embed).set_reference(event.command.id).set_channel_id(channel.id));
+
+//            User &user {*User::get_user(static_cast<long>(event.command.usr.id))};
+//            for(const auto &item: user.courses) {
+//                try {
+//                    Course &course {*Course::get_course(item)};
+//
+//                    [](Course *c) -> dpp::job {
+//                        co_await c->update();
+//                    }(&course);
+//
+//                } catch(DocumentNotFoundException &ex) { }
+//            }
 
         }
 
