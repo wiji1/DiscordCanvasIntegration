@@ -260,7 +260,7 @@ dpp::task<void> Guild::update() {
     for(auto &task: tasks) co_await task;
 
     //TODO: Possibly move save method outside of verify_existence
-    //TODO: Ensure that guild cannot be deregistered during verification (Coroutines will have to be canceled)
+    //TODO: Ensure that guild cannot be deregistered during verification (Coroutines will have to be canceled, look for another method)
 
     //TODO: Filter forum response
     co_await verify_existence();
