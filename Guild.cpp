@@ -262,7 +262,7 @@ dpp::task<void> Guild::update() {
     //TODO: Possibly move save method outside of verify_existence
     //TODO: Ensure that guild cannot be deregistered during verification (Coroutines will have to be canceled, look for another method)
 
-    //TODO: Filter forum response
+    //TODO: Filter forum response. Also return generic error if valid token is not input
     co_await verify_existence();
 
     for(const auto &course_id: to_add) {
