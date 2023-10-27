@@ -5,6 +5,7 @@
 #include "include/exceptions/AccessorNotFoundException.h"
 #include "include/CanvasAPI.h"
 #include "include/Guild.h"
+#include "include/ImageFromHTML.h"
 #include <vector>
 
 std::unordered_map<long, std::shared_ptr<Course>> Course::course_map;
@@ -117,6 +118,17 @@ dpp::task<void> Course::update(const std::string &override_token, bool override)
 
             if (std::count(recent_announcements.begin(), recent_announcements.end(), id)) continue;
             //TODO: Post announcements to channels
+            for(const auto &guild_id: tracking_guilds) {
+                Guild guild = *Guild::get_guild(guild_id);
+                for(const auto &tracked_course: guild.tracked_courses) {
+
+                    if(tracked_course->course_id != course_id) continue;
+
+                    ImageFromHTML::post_announcement_embed(tracked_course->announcements_channel, announcement["message"],
+               announcement["title"], announcement["url"], "Author");
+                }
+            }
+
             std::cout << "Posting Announcement: " << id << std::endl;
 
             recent_announcements.push_back(id);

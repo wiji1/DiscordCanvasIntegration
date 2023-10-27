@@ -1,79 +1,124 @@
 #include "include/ImageFromHTML.h"
+#include "include/UUID.h"
 #include <cstdio>
+#include <iostream>
 #include <image.h>
 
-/* Print out loading progress information */
 void ImageFromHTML::progress_changed(wkhtmltoimage_converter * c, int p) {
     printf("%3d%%\r",p);
     fflush(stdout);
 }
 
-/* Print loading phase information */
 void ImageFromHTML::phase_changed(wkhtmltoimage_converter * c) {
     int phase = wkhtmltoimage_current_phase(c);
     printf("%s\n", wkhtmltoimage_phase_description(c, phase));
 }
 
-/* Print a message to stderr when an error occurs */
 void ImageFromHTML::error(wkhtmltoimage_converter * c, const char * msg) {
     fprintf(stderr, "Error: %s\n", msg);
 }
 
-/* Print a message to stderr when a warning is issued */
 void ImageFromHTML::warning(wkhtmltoimage_converter * c, const char * msg) {
     fprintf(stderr, "Warning: %s\n", msg);
 }
 
-/* Main method convert image */
-void ImageFromHTML::init() {
+void ImageFromHTML::init(const char* html, const std::string& file_name) {
+    std::cout << "Init!" << std::endl;
     wkhtmltoimage_global_settings * gs;
     wkhtmltoimage_converter * c;
     const unsigned char * data;
     long len;
 
-    /* Init wkhtmltoimage in graphics less mode */
     wkhtmltoimage_init(false);
 
-    /*
-     * Create a global settings object used to store options that are not
-     * related to input objects, note that control of this object is parsed to
-     * the converter later, which is then responsible for freeing it
-     */
     gs = wkhtmltoimage_create_global_settings();
 
-    /* We want to convert the qstring documentation page */
-    wkhtmltoimage_set_global_setting(gs, "in", "http://www.google.com/");
     wkhtmltoimage_set_global_setting(gs, "fmt", "jpeg");
 
-    /* Create the actual converter object used to convert the pages */
-    c = wkhtmltoimage_create_converter(gs, NULL);
+    std::string converted_html {replace_unicode_escapes(html)};
+    std::cout << converted_html << std::endl;
 
-    /* Call the progress_changed function when progress changes */
+    c = wkhtmltoimage_create_converter(gs, converted_html.c_str());
+
     wkhtmltoimage_set_progress_changed_callback(c, progress_changed);
 
-    /* Call the phase _changed function when the phase changes */
     wkhtmltoimage_set_phase_changed_callback(c, phase_changed);
 
-    /* Call the error function when an error occurs */
     wkhtmltoimage_set_error_callback(c, error);
 
-    /* Call the warning function when a warning is issued */
     wkhtmltoimage_set_warning_callback(c, warning);
 
-    /* Perform the actual conversion */
-    if (!wkhtmltoimage_convert(c))
+    if(!wkhtmltoimage_convert(c)) {
         fprintf(stderr, "Conversion failed!");
+    } else {
+        printf("httpErrorCode: %d\n", wkhtmltoimage_http_error_code(c));
+        std::cout << "test" << std::endl;
 
-    /* Output possible http error code encountered */
-    printf("httpErrorCode: %d\n", wkhtmltoimage_http_error_code(c));
+        len = wkhtmltoimage_get_output(c, &data);
+        printf("%ld len\n", len);
 
-    len = wkhtmltoimage_get_output(c, &data);
-    printf("%ld len\n", len);
+        FILE *output_file = fopen(file_name.c_str(), "wb");
+        if(output_file) {
+            fwrite(data, 1, len, output_file);
+            fclose(output_file);
+            printf("Image saved to output.jpg\n");
+        } else {
+            fprintf(stderr, "Failed to open the output file for writing\n");
+        }
+    }
 
-
-    /* Destroy the converter object since we are done with it */
     wkhtmltoimage_destroy_converter(c);
 
-    /* We will no longer be needing wkhtmltoimage funcionality */
     wkhtmltoimage_deinit();
+}
+
+std::string ImageFromHTML::replace_unicode_escapes(const std::string &input) {
+    std::string result;
+    size_t pos = 0;
+    while(pos < input.length()) {
+        size_t unicodePos = input.find("\\u", pos);
+        size_t quotePos = input.find("\\\"", pos);
+
+        if(unicodePos == std::string::npos && quotePos == std::string::npos) {
+            result += input.substr(pos);
+            break;
+        }
+
+        if((unicodePos < quotePos && unicodePos != std::string::npos) || quotePos == std::string::npos) {
+            result += input.substr(pos, unicodePos - pos);
+
+            std::string unicodeEscape = input.substr(unicodePos, 6);
+            pos = unicodePos + 6;
+
+            wchar_t unicodeValue = std::stoi(unicodeEscape.substr(2), nullptr, 16);
+            result += static_cast<char>(unicodeValue);
+        } else {
+            result += input.substr(pos, quotePos - pos);
+
+            result += "\"";
+
+            pos = quotePos + 2;
+        }
+    }
+    return result;
+}
+
+void ImageFromHTML::post_announcement_embed(long channel_id, const std::string &html, const std::string &title, const std::string &url, const std::string &author) {
+    std::string uuid {uuid::generate_uuid_v4()};
+    std::string file_name {uuid + ".jpg"};
+
+    init(html.c_str(), file_name);
+
+    dpp::embed image = dpp::embed();
+    image.set_image("attachment://" + file_name);
+    image.set_title(title);
+    image.set_url(url);
+    image.set_color(dpp::colors::red);
+    image.set_footer(dpp::embed_footer().set_text(author));
+    image.set_timestamp(time(nullptr));
+
+    dpp::message msg(channel_id, image);
+    msg.add_file(file_name, dpp::utility::read_file(file_name));
+
+    bot->message_create(dpp::message(channel_id, image).set_channel_id(channel_id).add_file(file_name, dpp::utility::read_file(file_name)));
 }

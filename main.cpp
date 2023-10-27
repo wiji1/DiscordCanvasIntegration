@@ -89,8 +89,27 @@ int main() {
         }
 
         if(event.command.get_command_name() == "test") {
-            ImageFromHTML::init;
-
+//            ImageFromHTML::init();
+//
+//
+//            dpp::embed image = dpp::embed();
+//            image.set_image("attachment://output.jpg");
+//            image.set_title("CELLOBRATION 2023 is HERE at ASA on Saturday, November 4th - COME JOIN THE FUN!");
+//            image.set_url("https://goasa.instructure.com/courses/5218/discussion_topics/33521");
+//            image.set_color(dpp::colors::red);
+//            image.set_footer(dpp::embed_footer().set_text("Message"));
+//            image.set_timestamp(time(nullptr));
+//
+//            dpp::message msg(event.command.channel_id, "Hey there, I've got a new file!");
+//            msg.add_file("output.jpg", dpp::utility::read_file("output.jpg"));
+//
+//            dpp::channel channel = event.command.channel;
+//            bot->message_create(dpp::message(event.command.channel_id, image).set_reference(event.command.id).set_channel_id(channel.id).add_file("output.jpg", dpp::utility::read_file("output.jpg")));
+//
+//            return;
+//
+////            dpp::message(event.command.channel_id, embed).set_reference(event.command.id).set_channel_id(channel.id)
+//
 //            dpp::embed embed = dpp::embed().
 //                    set_color(dpp::colors::red).
 //                    set_title("CELLOBRATION 2023 is HERE at ASA on Saturday, November 4th - COME JOIN THE FUN!").
@@ -118,22 +137,22 @@ int main() {
 //                    set_footer(dpp::embed_footer().set_text("Message")).
 //                    set_timestamp(time(nullptr));
 //
-//            dpp::channel channel = event.command.channel;
+////            dpp::channel channel = event.command.channel;
 //            bot->message_create(dpp::message(event.command.channel_id, embed).set_reference(event.command.id).set_channel_id(channel.id));
-
+//
 //            event.reply(dpp::message(event.command.channel_id, embed).set_reference(event.command.id).set_channel_id(channel.id));
 
-//            User &user {*User::get_user(static_cast<long>(event.command.usr.id))};
-//            for(const auto &item: user.courses) {
-//                try {
-//                    Course &course {*Course::get_course(item)};
-//
-//                    [](Course *c) -> dpp::job {
-//                        co_await c->update();
-//                    }(&course);
-//
-//                } catch(DocumentNotFoundException &ex) { }
-//            }
+            User &user {*User::get_user(static_cast<long>(event.command.usr.id))};
+            for(const auto &item: user.courses) {
+                try {
+                    Course &course {*Course::get_course(item)};
+
+                    [](Course *c) -> dpp::job {
+                        co_await c->update();
+                    }(&course);
+
+                } catch(DocumentNotFoundException &ex) { }
+            }
 
         }
 
