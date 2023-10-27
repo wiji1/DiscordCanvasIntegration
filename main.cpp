@@ -89,6 +89,26 @@ int main() {
         }
 
         if(event.command.get_command_name() == "test") {
+
+
+//            std::string file_name {"output.jpg"};
+//
+//            std::cout << "Posting embed!" << std::endl;
+//            dpp::embed image = dpp::embed();
+//            image.set_image("attachment://" + file_name);
+//            image.set_title("title");
+//            image.set_url("url");
+//            image.set_color(dpp::colors::red);
+//            image.set_footer(dpp::embed_footer().set_text("author"));
+//            image.set_timestamp(time(nullptr));
+//
+//            dpp::message msg(event.command.channel_id, image);
+//            msg.add_file(file_name, dpp::utility::read_file(file_name));
+//
+//            bot->message_create(dpp::message(event.command.channel_id, image).set_channel_id(event.command.channel_id).add_file(file_name, dpp::utility::read_file(file_name)));
+
+
+
 //            ImageFromHTML::init();
 //
 //

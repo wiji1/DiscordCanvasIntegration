@@ -22,7 +22,7 @@ void ImageFromHTML::warning(wkhtmltoimage_converter * c, const char * msg) {
     fprintf(stderr, "Warning: %s\n", msg);
 }
 
-void ImageFromHTML::init(const char* html, const std::string& file_name) {
+dpp::task<void> ImageFromHTML::init(const char* html, const std::string& file_name) {
     std::cout << "Init!" << std::endl;
     wkhtmltoimage_global_settings * gs;
     wkhtmltoimage_converter * c;
@@ -70,6 +70,8 @@ void ImageFromHTML::init(const char* html, const std::string& file_name) {
     wkhtmltoimage_destroy_converter(c);
 
     wkhtmltoimage_deinit();
+
+    co_return;
 }
 
 std::string ImageFromHTML::replace_unicode_escapes(const std::string &input) {
@@ -103,22 +105,29 @@ std::string ImageFromHTML::replace_unicode_escapes(const std::string &input) {
     return result;
 }
 
-void ImageFromHTML::post_announcement_embed(long channel_id, const std::string &html, const std::string &title, const std::string &url, const std::string &author) {
+dpp::task<void> ImageFromHTML::post_announcement_embed(long channel_id, const std::string &html, const std::string &title, const std::string &url, const std::string &author) {
     std::string uuid {uuid::generate_uuid_v4()};
     std::string file_name {uuid + ".jpg"};
 
-    init(html.c_str(), file_name);
+    co_await init(html.c_str(), file_name);
 
-    dpp::embed image = dpp::embed();
-    image.set_image("attachment://" + file_name);
-    image.set_title(title);
-    image.set_url(url);
-    image.set_color(dpp::colors::red);
-    image.set_footer(dpp::embed_footer().set_text(author));
-    image.set_timestamp(time(nullptr));
+    setlocale(LC_ALL, "en_US.UTF-8");
 
-    dpp::message msg(channel_id, image);
-    msg.add_file(file_name, dpp::utility::read_file(file_name));
+    try {
+        std::cout << "Posting embed!" << std::endl;
+        dpp::embed image = dpp::embed();
+        image.set_image("attachment://" + file_name);
+        image.set_title(title);
+        image.set_url(url);
+        image.set_color(dpp::colors::red);
+        image.set_footer(dpp::embed_footer().set_text(author));
+        image.set_timestamp(time(nullptr));
 
-    bot->message_create(dpp::message(channel_id, image).set_channel_id(channel_id).add_file(file_name, dpp::utility::read_file(file_name)));
+        dpp::message msg(channel_id, image);
+        msg.add_file(file_name, dpp::utility::read_file(file_name));
+
+        bot->message_create(dpp::message(channel_id, image).set_channel_id(channel_id).add_file(file_name, dpp::utility::read_file(file_name)));
+    } catch(std::runtime_error &ex) {
+        std::cerr << ex.what() << std::endl;
+    }
 }

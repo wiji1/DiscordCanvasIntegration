@@ -124,7 +124,7 @@ dpp::task<void> Course::update(const std::string &override_token, bool override)
 
                     if(tracked_course->course_id != course_id) continue;
 
-                    ImageFromHTML::post_announcement_embed(tracked_course->announcements_channel, announcement["message"],
+                    co_await ImageFromHTML::post_announcement_embed(tracked_course->announcements_channel, announcement["message"],
                announcement["title"], announcement["url"], "Author");
                 }
             }
