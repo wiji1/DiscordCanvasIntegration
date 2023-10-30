@@ -12,8 +12,10 @@ public:
     long forums_channel;
     long role_id;
 
+    std::unordered_map<long, long> assignment_map;
+
     explicit TrackedCourse();
-    explicit TrackedCourse(long course_id, long category_id, long announcements_channel, long forums_channel, long role_id);
+    explicit TrackedCourse(long course_id, long category_id, long announcements_channel, long forums_channel, long role_id, std::unordered_map<long, long> assignment_map);
 
     [[nodiscard]] bool verify_role_existence(const dpp::role_map &role_map) const;
     [[nodiscard]] bool verify_channel_existence(const dpp::channel_map &channel_map) const;

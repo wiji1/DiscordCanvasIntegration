@@ -90,6 +90,23 @@ int main() {
 
         if(event.command.get_command_name() == "test") {
 
+//            setenv("LANG", "C", 1);
+
+
+            std::cout << "Posting embed!" << std::endl;
+            dpp::embed image = dpp::embed();
+            image.set_image("attachment://output.jpg");
+            image.set_title("title");
+            image.set_url("https://google.com");
+            image.set_color(dpp::colors::red);
+            image.set_footer(dpp::embed_footer().set_text("author"));
+            image.set_timestamp(time(nullptr));
+
+            dpp::message msg(event.command.channel_id, image);
+            msg.add_file("output.jpg", dpp::utility::read_file("output.jpg"));
+            msg.set_channel_id(event.command.channel_id);
+            bot->message_create(msg);
+
 
 //            std::string file_name {"output.jpg"};
 //

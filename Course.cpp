@@ -86,10 +86,10 @@ dpp::task<void> Course::update(const std::string &override_token, bool override)
         nlohmann::json assignment_data;
         assignment_stream >> assignment_data;
 
-        for (const auto &assignment: assignment_data) {
+        for(const auto &assignment: assignment_data) {
             int id = {assignment["id"]};
 
-            if (std::count(recent_assignments.begin(), recent_assignments.end(), id)) continue;
+            if(std::count(recent_assignments.begin(), recent_assignments.end(), id)) continue;
             //TODO: Post Assignment to channels
             std::cout << "Posting Assignment: " << id << std::endl;
 
@@ -98,14 +98,14 @@ dpp::task<void> Course::update(const std::string &override_token, bool override)
 
         for(const auto &item: recent_assignments) {
             bool found{false};
-            for (const auto &assignment: assignment_data) {
+            for(const auto &assignment: assignment_data) {
                 int id = {assignment["id"]};
                 if (item == id) {
                     found = true;
                     break;
                 }
             }
-            if (!found) std::remove(recent_assignments.begin(), recent_assignments.end(), item);
+            if(!found) std::remove(recent_assignments.begin(), recent_assignments.end(), item);
         }
 
         std::string announcement_response = co_await CanvasAPI::get_announcements(course_id, accessor_token);
@@ -116,7 +116,7 @@ dpp::task<void> Course::update(const std::string &override_token, bool override)
         for(const auto &announcement: announcement_data) {
             int id = {announcement["id"]};
 
-            if (std::count(recent_announcements.begin(), recent_announcements.end(), id)) continue;
+            if(std::count(recent_announcements.begin(), recent_announcements.end(), id)) continue;
             //TODO: Post announcements to channels
             for(const auto &guild_id: tracking_guilds) {
                 Guild guild = *Guild::get_guild(guild_id);

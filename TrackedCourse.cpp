@@ -1,9 +1,9 @@
 #include <iostream>
 #include "include/TrackedCourse.h"
 
-TrackedCourse::TrackedCourse(long course_id, long category_id, long announcements_channel, long forums_channel, long role_id) :
+TrackedCourse::TrackedCourse(long course_id, long category_id, long announcements_channel, long forums_channel, long role_id, std::unordered_map<long, long> assignment_map) :
 course_id {course_id}, category_id {category_id}, announcements_channel {announcements_channel}, forums_channel {forums_channel},
-role_id {role_id} {
+role_id {role_id}, assignment_map {assignment_map} {
 
 }
 
