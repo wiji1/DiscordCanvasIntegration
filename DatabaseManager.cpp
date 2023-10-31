@@ -205,12 +205,20 @@ void DatabaseManager::update_guild(const Guild &guild) {
     bsoncxx::builder::basic::array courses_array_builder;
     for(const std::shared_ptr<TrackedCourse> &tracked_course : guild.tracked_courses) {
 
+        bsoncxx::builder::basic::array assignments_array_builder;
+        for(const auto &entry: tracked_course->assignment_map) {
+            std::stringstream stream;
+            stream << entry.first << ":" << entry.second;
+            assignments_array_builder.append(bsoncxx::types::b_string{stream.str()});
+        }
+
         bsoncxx::builder::basic::document course_doc_builder;
         course_doc_builder.append(kvp("course_id", static_cast<int64_t>(tracked_course->course_id)));
         course_doc_builder.append(kvp("category_id", static_cast<int64_t>(tracked_course->category_id)));
         course_doc_builder.append(kvp("announcements_channel", static_cast<int64_t>(tracked_course->announcements_channel)));
         course_doc_builder.append(kvp("forums_channel", static_cast<int64_t>(tracked_course->forums_channel)));
         course_doc_builder.append(kvp("role_id", static_cast<int64_t>(tracked_course->role_id)));
+        course_doc_builder.append(kvp("assignments", assignments_array_builder.view()));
         courses_array_builder.append(course_doc_builder.extract());
     }
 
@@ -236,18 +244,27 @@ void DatabaseManager::update_guild(const Guild &guild) {
 
 void DatabaseManager::insert_guild(const Guild &guild) {
     bsoncxx::builder::basic::array users_array_builder;
-    for (const long &user : guild.verified_users) {
+    for(const long &user : guild.verified_users) {
         users_array_builder.append(bsoncxx::types::b_int64{user});
     }
 
     bsoncxx::builder::basic::array courses_array_builder;
-    for (const std::shared_ptr<TrackedCourse> &tracked_course : guild.tracked_courses) {
+    for(const std::shared_ptr<TrackedCourse> &tracked_course : guild.tracked_courses) {
+
+        bsoncxx::builder::basic::array assignments_array_builder;
+        for(const auto &entry: tracked_course->assignment_map) {
+            std::stringstream stream;
+            stream << entry.first << ":" << entry.second;
+            assignments_array_builder.append(bsoncxx::types::b_string{stream.str()});
+        }
+
         bsoncxx::builder::basic::document course_doc_builder;
         course_doc_builder.append(kvp("course_id", static_cast<int64_t>(tracked_course->course_id)));
         course_doc_builder.append(kvp("category_id", static_cast<int64_t>(tracked_course->category_id)));
         course_doc_builder.append(kvp("announcements_channel", static_cast<int64_t>(tracked_course->announcements_channel)));
         course_doc_builder.append(kvp("forums_channel", static_cast<int64_t>(tracked_course->forums_channel)));
         course_doc_builder.append(kvp("role_id", static_cast<int64_t>(tracked_course->role_id)));
+        course_doc_builder.append(kvp("assignments", assignments_array_builder.view()));
         courses_array_builder.append(course_doc_builder.extract());
     }
 
