@@ -45,18 +45,20 @@ void Guild::document_init(const bsoncxx::document::value &document) {
         long forums_channel = course_doc_view["forums_channel"].get_int64();
         long role_id = course_doc_view["role_id"].get_int64();
 
-        std::unordered_map<long, long> assignment_map {};
+        std::unordered_map<long, long> assignment_map;
+        long dddd = 45687654;
+        assignment_map[dddd] = 3;
         auto map = course_doc_view["assignments"];
         bsoncxx::document::view map_view = map.get_document();
 
-        for(const auto &map_value: map_view) {
-            assignment_map[map_value.key()] = map_value.get_value();
+        for (const auto &map_value : map_view) {
+            auto key_str = map_value.key();
+            long key = std::stol(key_str);
+            long value = map_value.get_value().get_int64();
+            assignment_map[key] = value;
         }
 
-
-
-
-//        tracked_courses.emplace_back(std::make_shared<TrackedCourse>(course_id, category_id, announcements_channel, forums_channel, role_id));
+        tracked_courses.emplace_back(std::make_shared<TrackedCourse>(course_id, category_id, announcements_channel, forums_channel, role_id, assignment_map));
     }
 }
 
