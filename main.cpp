@@ -107,89 +107,24 @@ int main() {
             msg.set_channel_id(event.command.channel_id);
             bot->message_create(msg);
 
-
-//            std::string file_name {"output.jpg"};
-//
-//            std::cout << "Posting embed!" << std::endl;
-//            dpp::embed image = dpp::embed();
-//            image.set_image("attachment://" + file_name);
-//            image.set_title("title");
-//            image.set_url("url");
-//            image.set_color(dpp::colors::red);
-//            image.set_footer(dpp::embed_footer().set_text("author"));
-//            image.set_timestamp(time(nullptr));
-//
-//            dpp::message msg(event.command.channel_id, image);
-//            msg.add_file(file_name, dpp::utility::read_file(file_name));
-//
-//            bot->message_create(dpp::message(event.command.channel_id, image).set_channel_id(event.command.channel_id).add_file(file_name, dpp::utility::read_file(file_name)));
-
-
-
-//            ImageFromHTML::init();
-//
-//
-//            dpp::embed image = dpp::embed();
-//            image.set_image("attachment://output.jpg");
-//            image.set_title("CELLOBRATION 2023 is HERE at ASA on Saturday, November 4th - COME JOIN THE FUN!");
-//            image.set_url("https://goasa.instructure.com/courses/5218/discussion_topics/33521");
-//            image.set_color(dpp::colors::red);
-//            image.set_footer(dpp::embed_footer().set_text("Message"));
-//            image.set_timestamp(time(nullptr));
-//
-//            dpp::message msg(event.command.channel_id, "Hey there, I've got a new file!");
-//            msg.add_file("output.jpg", dpp::utility::read_file("output.jpg"));
-//
-//            dpp::channel channel = event.command.channel;
-//            bot->message_create(dpp::message(event.command.channel_id, image).set_reference(event.command.id).set_channel_id(channel.id).add_file("output.jpg", dpp::utility::read_file("output.jpg")));
-//
-//            return;
-//
-////            dpp::message(event.command.channel_id, embed).set_reference(event.command.id).set_channel_id(channel.id)
-//
-//            dpp::embed embed = dpp::embed().
-//                    set_color(dpp::colors::red).
-//                    set_title("CELLOBRATION 2023 is HERE at ASA on Saturday, November 4th - COME JOIN THE FUN!").
-//                    set_url("https://goasa.instructure.com/courses/5218/discussion_topics/33521").
-//                    add_field(
-//                    "Content:",
-//                    "Hello AZ Cellists!\n"
-//                    "The Cellobration 2023 team hit the road and found our new home at Arizona School for the Arts. We can't wait to see you again and celebrate OUR CELLO COMMUNITY!\n"
-//                    "Register by Saturday, October 7th to ensure that you receive the right T-shirt size.\n"
-//                    "Here are the details:\n"
-//                    "When is it you ask? Saturday, November 4, 2023\n"
-//                    "Where is it located? Arizona School for the Arts Links to an external site.\n"
-//                    "Will EVERYONE receive a T-shirt? YES - register by 10/7/23 to ensure that you get the correct size.\n"
-//                    "Will there be an Audition Prep Workshop? YES (this year, like last year, it is after the conclusion of our 1:30pm concert)\n"
-//                    "We have added a \"Shooting Stars\" session for our young cellists, ages 4-7.\n"
-//                    "Will we wear masks indoors? Masks are optional, HOWEVER, if the metrics for the community warrant the wearing of masks, YES, yes we will! This will be reviewed as we get closer to the date.\n"
-//                    "What about the ACS Cello Competition? YES! It will take place on Friday, November 3rd\n"
-//                    "Sign up by October 7th to secure your T-shirt size!\n"
-//                    "How do you find out more? Visit:\n"
-//                    "http://www.cellobrationaz.com Links to an external site.  AND/OR \n"
-//                    "Cellobration 2023 Information Links to an external site. and\n"
-//                    "Arizona Cello Society Competition 2023 Links to an external site.\n"
-//                    "We can't wait to see and hear you. Register Links to an external site. today!"
-//            ).
-//                    set_footer(dpp::embed_footer().set_text("Message")).
-//                    set_timestamp(time(nullptr));
-//
-////            dpp::channel channel = event.command.channel;
-//            bot->message_create(dpp::message(event.command.channel_id, embed).set_reference(event.command.id).set_channel_id(channel.id));
-//
-//            event.reply(dpp::message(event.command.channel_id, embed).set_reference(event.command.id).set_channel_id(channel.id));
-
             User &user {*User::get_user(static_cast<long>(event.command.usr.id))};
-            for(const auto &item: user.courses) {
-                try {
-                    Course &course {*Course::get_course(item)};
 
-                    [](Course *c) -> dpp::job {
-                        co_await c->update();
-                    }(&course);
+            [](User *u) -> dpp::job {
+                std::vector<dpp::task<void>> tasks;
+                tasks.reserve(u->courses.size());
 
-                } catch(DocumentNotFoundException &ex) { }
-            }
+                for(const auto &item: u->courses) {
+                    try {
+                        Course &course {*Course::get_course(item)};
+
+                        tasks.emplace_back(course.update());
+                    } catch(DocumentNotFoundException &ex) { }
+                }
+
+                for(auto &task : tasks) co_await task;
+            }(&user);
+
+
 
         }
 
