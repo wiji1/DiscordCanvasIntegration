@@ -1,5 +1,4 @@
 #include "include/ImageFromHTML.h"
-#include "include/UUID.h"
 #include <cstdio>
 #include <iostream>
 #include <image.h>
@@ -105,16 +104,9 @@ std::string ImageFromHTML::replace_unicode_escapes(const std::string &input) {
     return result;
 }
 
-dpp::task<void> ImageFromHTML::post_announcement_embed(long channel_id, const std::string &html, const std::string &title, const std::string &url, const std::string &author) {
-    std::string uuid {uuid::generate_uuid_v4()};
-
-    co_await init(html.c_str(), uuid + ".jpg");
-    std::string file_name {uuid + ".jpg"};
+dpp::task<void> ImageFromHTML::post_announcement_embed(long channel_id, const std::string &file_name, const std::string &title, const std::string &url, const std::string &author) {
 
     try {
-//        setenv("LANG", "C", 1);
-
-        std::cout << "Posting embed!" << std::endl;
         dpp::embed image = dpp::embed();
         image.set_image("attachment://" + file_name);
         image.set_title(title);
@@ -123,10 +115,11 @@ dpp::task<void> ImageFromHTML::post_announcement_embed(long channel_id, const st
         image.set_footer(dpp::embed_footer().set_text(author));
         image.set_timestamp(time(nullptr));
 
-
         dpp::message msg(channel_id, image);
         msg.add_file(file_name, dpp::utility::read_file(file_name));
         msg.set_channel_id(channel_id);
+        std::cout << "Posting embed!" << std::endl;
+        std::remove(file_name.c_str());
         co_await bot->co_message_create(msg);
 
     } catch(std::runtime_error &ex) {
@@ -134,18 +127,13 @@ dpp::task<void> ImageFromHTML::post_announcement_embed(long channel_id, const st
     }
 }
 
-dpp::task<void> ImageFromHTML::post_assignment_embed(long channel_id, const std::string &html, const std::string &title,
+dpp::task<void> ImageFromHTML::post_assignment_embed(long channel_id, const std::string &file_name, const std::string &title,
      const std::string &url, const std::string &due, const int points) {
 
-    std::string uuid {uuid::generate_uuid_v4()};
-
-    co_await init(html.c_str(), uuid + ".jpg");
-    std::string file_name {uuid + ".jpg"};
-
-
-    std::cout << "html length: " << html.length() << std::endl;
-    std::cout << "title: " << title << std::endl;
-    std::cout << "url: " << url << std::endl;
+//    std::string uuid {uuid::generate_uuid_v4()};
+//
+//    co_await init(html.c_str(), uuid + ".jpg");
+//    std::string file_name {uuid + ".jpg"};
 
     try {
         setenv("LANG", "C", 1);
@@ -159,11 +147,11 @@ dpp::task<void> ImageFromHTML::post_assignment_embed(long channel_id, const std:
         image.set_footer(dpp::embed_footer().set_text("Due: " + due + " | Points: " + std::to_string(points)));
         image.set_timestamp(time(nullptr));
 
-
         dpp::message msg(channel_id, image);
         msg.add_file(file_name, dpp::utility::read_file(file_name));
         msg.set_channel_id(channel_id);
         co_await bot->co_message_create(msg);
+
 
     } catch(std::runtime_error &ex) {
         std::cerr << ex.what() << std::endl;

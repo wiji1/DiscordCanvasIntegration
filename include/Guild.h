@@ -13,7 +13,7 @@ extern std::unique_ptr<dpp::cluster> bot;
 
 class Guild {
 public:
-    static const int MAXIMUM_ROLE_REQUESTS = 3;
+    static const int MAXIMUM_ROLE_REQUESTS = 12;
 
     static std::unordered_map<long, std::shared_ptr<Guild>> guild_map;
     std::vector<std::shared_ptr<TrackedCourse>> tracked_courses;

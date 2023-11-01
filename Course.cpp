@@ -6,6 +6,7 @@
 #include "include/CanvasAPI.h"
 #include "include/Guild.h"
 #include "include/ImageFromHTML.h"
+#include "include/UUID.h"
 #include <vector>
 
 std::unordered_map<long, std::shared_ptr<Course>> Course::course_map;
@@ -113,24 +114,41 @@ dpp::task<void> Course::update(const std::string &override_token, bool override)
         nlohmann::json announcement_data;
         announcement_stream >> announcement_data;
 
+        std::reverse(announcement_data.begin(), announcement_data.end());
         for(const auto &announcement: announcement_data) {
             int id = {announcement["id"]};
 
             if(std::count(recent_announcements.begin(), recent_announcements.end(), id)) continue;
             //TODO: Post announcements to channels
+
+            std::string uuid {uuid::generate_uuid_v4()};
+            if(!tracking_guilds.empty()) {
+                std::string message {announcement["message"]};
+//                message = message.substr(0, message.length() - 1);
+
+                co_await ImageFromHTML::init(message.c_str(), uuid + ".jpg");
+                std::string file_name {uuid + ".jpg"};
+            }
+
+            std::vector<dpp::task<void>> tasks;
+            tasks.reserve(tracking_guilds.size());
+
             for(const auto &guild_id: tracking_guilds) {
                 Guild guild = *Guild::get_guild(guild_id);
                 for(const auto &tracked_course: guild.tracked_courses) {
 
                     if(tracked_course->course_id != course_id) continue;
+                    ImageFromHTML::post_announcement_embed(tracked_course->announcements_channel, uuid + ".jpg",
+                                                           announcement["title"], announcement["url"], "Author");
 
-                    co_await ImageFromHTML::post_announcement_embed(tracked_course->announcements_channel, announcement["message"],
-               announcement["title"], announcement["url"], "Author");
+                    //TODO: Figure out why this hangs.
+//                    tasks.emplace_back(ImageFromHTML::post_announcement_embed(tracked_course->announcements_channel, uuid + ".jpg",
+//                    announcement["title"], announcement["url"], "Author"));
                 }
             }
 
+            for(auto &task : tasks) co_await task;
             std::cout << "Posting Announcement: " << id << std::endl;
-
             recent_announcements.push_back(id);
         }
 
