@@ -87,14 +87,60 @@ dpp::task<void> Course::update(const std::string &override_token, bool override)
         nlohmann::json assignment_data;
         assignment_stream >> assignment_data;
 
+        std::reverse(assignment_data.begin(), assignment_data.end());
+
         for(const auto &assignment: assignment_data) {
             int id = {assignment["id"]};
 
             if(std::count(recent_assignments.begin(), recent_assignments.end(), id)) continue;
+
+            std::string uuid {uuid::generate_uuid_v4()};
+            if(!tracking_guilds.empty()) {
+//                std::string message {assignment["message"]};
+//
+//                co_await ImageFromHTML::init(message.c_str(), uuid + ".jpg");
+//                std::string file_name {uuid + ".jpg"};
+            }
+
+            std::vector<dpp::task<void>> tasks;
+            tasks.reserve(tracking_guilds.size());
+
+            for(const auto &guild_id: tracking_guilds) {
+                Guild guild = *Guild::get_guild(guild_id);
+                for(const auto &tracked_course: guild.tracked_courses) {
+                    if(tracked_course->course_id != course_id) continue;
+
+                    dpp::auto_archive_duration_t archive {dpp::arc_1_week};
+
+                    std::cout << "Test 1" << std::endl;
+
+                    dpp::message message {assignment["name"]};
+
+                    dpp::confirmation_callback_t thread_callback =
+                            co_await bot->co_thread_create_in_forum(assignment["name"], tracked_course->forums_channel,
+                                                                    message, archive, 0);
+
+                    if(thread_callback.is_error()) {
+                        std::cout << "Error: " << thread_callback.get_error().message << std::endl;
+                    }
+
+                    std::cout << "Test 2" << std::endl;
+//                  dpp::channel channel = std::get<dpp::channel>(thread_callback.value);
+                    long channel_id = static_cast<long>(std::get<dpp::thread>(thread_callback.value).id);
+                    tracked_course->assignment_map[id] = channel_id;
+                }
+            }
+
             //TODO: Post Assignment to channels
             std::cout << "Posting Assignment: " << id << std::endl;
 
             recent_assignments.push_back(id);
+        }
+
+        for(const auto &id: tracking_guilds) {
+            Guild guild = *Guild::get_guild(id);
+
+            guild.save();
         }
 
         for(const auto &item: recent_assignments) {
@@ -154,14 +200,14 @@ dpp::task<void> Course::update(const std::string &override_token, bool override)
 
         for(const auto &item: recent_announcements) {
             bool found{false};
-            for (const auto &announcement: announcement_data) {
+            for(const auto &announcement: announcement_data) {
                 int id = {announcement["id"]};
                 if (item == id) {
                     found = true;
                     break;
                 }
             }
-            if (!found) std::remove(recent_announcements.begin(), recent_announcements.end(), item);
+            if(!found) std::remove(recent_announcements.begin(), recent_announcements.end(), item);
         }
     } catch(nlohmann::detail::parse_error &ex) {
         std::cout << ex.what() << std::endl;
