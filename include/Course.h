@@ -7,9 +7,9 @@
 #include "User.h"
 
 class Course {
-private:
-    static std::unordered_map<long, std::shared_ptr<Course>> course_map;
 public:
+    static std::unordered_map<long, std::shared_ptr<Course>> course_map;
+
     long course_id;
     bool is_updating {false};
     bool is_active {true};

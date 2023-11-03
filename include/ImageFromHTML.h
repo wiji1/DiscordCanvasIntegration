@@ -25,7 +25,7 @@ public:
     static dpp::task<void> post_announcement_embed(long channel_id, const std::string &file_name, const std::string &title, const std::string &url,
                             const std::string &author);
 
-    static dpp::task<void> post_assignment_embed(long channel_id, const std::string &file_name, const std::string &title, const std::string &url,
+    static dpp::task<dpp::message> post_assignment_embed(long channel_id, const std::string &file_name, const std::string &title, const std::string &url,
                           const std::string &due, int points);
 
 };

@@ -29,6 +29,7 @@ int main() {
             bot->global_command_create(dpp::slashcommand("test", "testing", bot->me.id));
             bot->global_command_create(dpp::slashcommand("setup", "testing", bot->me.id));
             bot->global_command_create(dpp::slashcommand("cleanup", "testing", bot->me.id));
+            bot->global_command_create(dpp::slashcommand("softcleanup", "testing", bot->me.id));
             bot->global_command_create(dpp::slashcommand("save", "testing", bot->me.id));
             bot->global_command_create(dpp::slashcommand("ping", "testing", bot->me.id));
         }
@@ -169,6 +170,39 @@ int main() {
 
             event.reply("Cleaning up!");
             guild.deregister();
+        }
+        if(event.command.get_command_name() == "softcleanup") {
+
+            for(const auto &entry: Course::course_map) {
+                entry.second->recent_announcements.clear();
+                entry.second->recent_assignments.clear();
+                entry.second->save();
+            }
+
+            for(const auto &entry: Guild::guild_map) {
+                for(const auto &tracked: entry.second->tracked_courses) {
+                    for(const auto &assignment: tracked->assignment_map) {
+                        [assignment]() -> dpp::job {co_await bot->co_guild_delete(assignment.second);}();
+                    }
+
+                    tracked->assignment_map.clear();
+                }
+
+                entry.second->save();
+            }
+
+
+//            long guild_id = event.command.guild_id;
+//            if(!Guild::is_registered(guild_id)) {
+//                event.reply("Guild is not registered!");
+//                return;
+//            }
+//
+//            Guild &guild = *Guild::get_guild(guild_id);
+
+            event.reply("Cleaning up!");
+
+
         }
     });
 

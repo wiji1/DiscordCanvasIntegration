@@ -127,7 +127,7 @@ dpp::task<void> ImageFromHTML::post_announcement_embed(long channel_id, const st
     }
 }
 
-dpp::task<void> ImageFromHTML::post_assignment_embed(long channel_id, const std::string &file_name, const std::string &title,
+dpp::task<dpp::message> ImageFromHTML::post_assignment_embed(long channel_id, const std::string &file_name, const std::string &title,
      const std::string &url, const std::string &due, const int points) {
 
 //    std::string uuid {uuid::generate_uuid_v4()};
@@ -150,10 +150,14 @@ dpp::task<void> ImageFromHTML::post_assignment_embed(long channel_id, const std:
         dpp::message msg(channel_id, image);
         msg.add_file(file_name, dpp::utility::read_file(file_name));
         msg.set_channel_id(channel_id);
-        co_await bot->co_message_create(msg);
+//        co_await bot->co_message_create(msg);
+
+        co_return msg;
 
 
     } catch(std::runtime_error &ex) {
         std::cerr << ex.what() << std::endl;
     }
+
+    co_return nullptr;
 }

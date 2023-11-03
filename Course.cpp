@@ -95,11 +95,12 @@ dpp::task<void> Course::update(const std::string &override_token, bool override)
             if(std::count(recent_assignments.begin(), recent_assignments.end(), id)) continue;
 
             std::string uuid {uuid::generate_uuid_v4()};
+
             if(!tracking_guilds.empty()) {
-//                std::string message {assignment["message"]};
-//
-//                co_await ImageFromHTML::init(message.c_str(), uuid + ".jpg");
-//                std::string file_name {uuid + ".jpg"};
+                std::string description {assignment["description"]};
+
+                co_await ImageFromHTML::init(description.c_str(), uuid + ".jpg");
+                std::string file_name {uuid + ".jpg"};
             }
 
             std::vector<dpp::task<void>> tasks;
@@ -110,12 +111,10 @@ dpp::task<void> Course::update(const std::string &override_token, bool override)
                 for(const auto &tracked_course: guild.tracked_courses) {
                     if(tracked_course->course_id != course_id) continue;
 
-                    dpp::auto_archive_duration_t archive {dpp::arc_1_week};
-
-                    std::cout << "Test 1" << std::endl;
-
                     dpp::message message {assignment["name"]};
+                    message = co_await ImageFromHTML::post_assignment_embed(tracked_course->announcements_channel, uuid + ".jpg", "", "", "", 0);
 
+                    dpp::auto_archive_duration_t archive {dpp::arc_1_week};
                     dpp::confirmation_callback_t thread_callback =
                             co_await bot->co_thread_create_in_forum(assignment["name"], tracked_course->forums_channel,
                                                                     message, archive, 0);
@@ -124,8 +123,6 @@ dpp::task<void> Course::update(const std::string &override_token, bool override)
                         std::cout << "Error: " << thread_callback.get_error().message << std::endl;
                     }
 
-                    std::cout << "Test 2" << std::endl;
-//                  dpp::channel channel = std::get<dpp::channel>(thread_callback.value);
                     long channel_id = static_cast<long>(std::get<dpp::thread>(thread_callback.value).id);
                     tracked_course->assignment_map[id] = channel_id;
                 }
