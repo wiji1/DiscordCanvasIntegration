@@ -97,7 +97,7 @@ dpp::task<void> Course::update(const std::string &override_token, bool override)
             std::string uuid {uuid::generate_uuid_v4()};
 
             if(!tracking_guilds.empty()) {
-                std::string description {assignment["description"]};
+                std::string description {assignment["description"] == nullptr ? "No additional details were added for this assignment." : assignment["description"]};
 
                 co_await ImageFromHTML::init(description.c_str(), uuid + ".jpg");
                 std::string file_name {uuid + ".jpg"};
@@ -111,7 +111,7 @@ dpp::task<void> Course::update(const std::string &override_token, bool override)
                 for(const auto &tracked_course: guild.tracked_courses) {
                     if(tracked_course->course_id != course_id) continue;
 
-                    dpp::message message {assignment["name"]};
+                    dpp::message message {};
                     message = co_await ImageFromHTML::post_assignment_embed(tracked_course->announcements_channel, uuid + ".jpg", "", "", "", 0);
 
                     dpp::auto_archive_duration_t archive {dpp::arc_1_week};
